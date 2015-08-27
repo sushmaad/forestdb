@@ -30,12 +30,17 @@
 #include "filemgr_anomalous_ops.h"
 #include "libforestdb/forestdb.h"
 
+#ifndef BLKDEV
+#define BLKDEV
+#endif
+
 struct filemgr_ops * get_anomalous_filemgr_ops();
 static int filemgr_anomalous_behavior = 0;
 
 // The routines below are adapted from filemgr_ops.cc to add indirection
 struct filemgr_ops * get_win_filemgr_ops();
 struct filemgr_ops * get_linux_filemgr_ops();
+struct filemgr_ops * get_linux_blkmgr_ops();
 struct filemgr_ops * get_filemgr_ops()
 {
     if (filemgr_anomalous_behavior) {
@@ -46,8 +51,12 @@ struct filemgr_ops * get_filemgr_ops()
     // windows
     return get_win_filemgr_ops();
 #else
-    // linux, mac os x
-    return get_linux_filemgr_ops();
+#if defined BLKDEV
+    return get_linux_blkmgr_ops();
+#else
+     // linux, mac os x
+     return get_linux_filemgr_ops();
+ #endif
 #endif
 }
 
@@ -76,6 +85,11 @@ ssize_t _pread_cb(void *ctx, struct filemgr_ops *normal_ops,
                   int fd, void *buf, size_t count, cs_off_t offset)
 {
     return normal_ops->pread(fd, buf, count, offset);
+}
+
+ssize_t _getblksize_cb(void *ctx, struct filemgr_ops *normal_ops, int fd)
+{
+    return normal_ops->getblksize(fd);
 }
 
 int _close_cb(void *ctx, struct filemgr_ops *normal_ops,
@@ -162,6 +176,7 @@ struct anomalous_callbacks default_callbacks = {
     _open_cb,
     _pwrite_cb,
     _pread_cb,
+    _getblksize_cb,
     _close_cb,
     _goto_eof_cb,
     _file_size_cb,
@@ -212,6 +227,10 @@ ssize_t _filemgr_anomalous_pread(int fd, void *buf, size_t count,
 {
     return anon_cbs->pread_cb(anon_ctx, normal_filemgr_ops, fd, buf, count,
                               offset);
+}
+ssize_t _filemgr_anomalous_getblksize(int fd)
+{
+    return anon_cbs->getblksize_cb(anon_ctx, normal_filemgr_ops, fd);
 }
 
 int _filemgr_anomalous_close(int fd)
@@ -291,6 +310,7 @@ struct filemgr_ops anomalous_ops = {
     _filemgr_anomalous_open,
     _filemgr_anomalous_pwrite,
     _filemgr_anomalous_pread,
+    _filemgr_anomalous_getblksize,
     _filemgr_anomalous_close,
     _filemgr_anomalous_goto_eof,
     _filemgr_anomalous_file_size,

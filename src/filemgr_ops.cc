@@ -16,17 +16,23 @@
  */
 
 #include "filemgr_ops.h"
-
+#define BLKDEV
 struct filemgr_ops * get_win_filemgr_ops();
 struct filemgr_ops * get_linux_filemgr_ops();
+struct filemgr_ops * get_linux_blkmgr_ops();
 
 struct filemgr_ops * get_filemgr_ops()
 {
+
 #if defined(WIN32) || defined(_WIN32)
-    // windows
-    return get_win_filemgr_ops();
+  // windows
+  return get_win_filemgr_ops();
 #else
+  #if defined(BLKDEV)
+    return get_linux_blkmgr_ops();
+  #else
     // linux, mac os x
     return get_linux_filemgr_ops();
+  #endif
 #endif
 }

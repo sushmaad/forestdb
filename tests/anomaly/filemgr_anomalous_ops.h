@@ -35,6 +35,7 @@ struct anomalous_callbacks {
                          int fd, void *buf, size_t count, cs_off_t offset);
     ssize_t (*pread_cb)(void *ctx, struct filemgr_ops *normal_ops,
                         int fd, void *buf, size_t count, cs_off_t offset);
+    ssize_t (*getblksize_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     int (*close_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     cs_off_t (*goto_eof_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     cs_off_t (*file_size_cb)(void *ctx, struct filemgr_ops *normal_ops,

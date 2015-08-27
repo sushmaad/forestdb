@@ -88,6 +88,7 @@ struct filemgr_ops {
     int (*open)(const char *pathname, int flags, mode_t mode);
     ssize_t (*pwrite)(int fd, void *buf, size_t count, cs_off_t offset);
     ssize_t (*pread)(int fd, void *buf, size_t count, cs_off_t offset);
+    ssize_t (*getblksize)(int fd);
     int (*close)(int fd);
     cs_off_t (*goto_eof)(int fd);
     cs_off_t (*file_size)(const char *filename);

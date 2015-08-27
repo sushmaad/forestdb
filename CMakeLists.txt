@@ -58,6 +58,7 @@ else(COUCHBASE_SERVER_BUILD)
 endif(COUCHBASE_SERVER_BUILD)
 
 INCLUDE(FindAsyncIOLib)
+INCLUDE(FindUftlLib)
 
 FIND_LIBRARY(EXECINFO_LIBRARY
         NAMES execinfo)
@@ -73,7 +74,8 @@ if (NOT WIN32)
     set ( CMAKE_CXX_FLAGS_DEBUG "-O0 -Wunused-variable -Wall -pedantic -std=c++11 -Wredundant-decls")
     set(PTHREAD_LIB pthread)
     set(LIBM m)
-    set(FORESTDB_FILE_OPS "src/filemgr_ops_linux.cc")
+#set(FORESTDB_FILE_OPS "src/filemgr_ops_linux.cc")
+    set(FORESTDB_FILE_OPS "src/blkmgr_ops_linux.cc")
 else (NOT WIN32)
     set(FORESTDB_FILE_OPS "src/filemgr_ops_windows.cc")
     set(GETTIMEOFDAY_VS "${PROJECT_SOURCE_DIR}/utils/gettimeofday_vs.cc")
@@ -150,7 +152,7 @@ add_library(forestdb SHARED
             utils/partiallock.cc
             utils/time_utils.cc
             utils/system_resource_stats.cc)
-target_link_libraries(forestdb ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
+target_link_libraries(forestdb ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES}
                       ${BACKTRACE_LIBRARIES} ${PLATFORM_LIBRARY})
 
@@ -191,7 +193,7 @@ add_executable(forestdb_dump
                utils/partiallock.cc
                utils/time_utils.cc
                utils/system_resource_stats.cc)
-target_link_libraries(forestdb_dump ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
+target_link_libraries(forestdb_dump ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES} ${BACKTRACE_LIBRARIES}
                       ${PLATFORM_LIBRARY})
 set_target_properties(forestdb_dump PROPERTIES COMPILE_FLAGS "-D_FDB_TOOLS")
@@ -233,7 +235,7 @@ add_executable(forestdb_hexamine
                utils/partiallock.cc
                utils/time_utils.cc
                utils/system_resource_stats.cc)
-target_link_libraries(forestdb_hexamine ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
+target_link_libraries(forestdb_hexamine ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES} ${BACKTRACE_LIBRARIES}
                       ${PLATFORM_LIBRARY})
 set_target_properties(forestdb_hexamine PROPERTIES COMPILE_FLAGS "-D_FDB_TOOLS")

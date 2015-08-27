@@ -15,15 +15,15 @@
  *   limitations under the License.
  */
 
-#define TARGET_DOC_SIZE_IN_MB 2048
-#define MAX_KEY_LEN 200
-#define BODY_LEN 10
-#define NUM_WRITERS 8
-#define BUFFERCACHE_SIZE (20*1024*1024)
-#define MULTI_KV true
+#define TARGET_DOC_SIZE_IN_MB 256
+#define KEY_LEN 16
+#define BODY_LEN 1024
+#define NUM_WRITERS 1
+#define BUFFERCACHE_SIZE 0
+#define MULTI_KV false
 
-#define NUM_DOCS (((uint64_t)TARGET_DOC_SIZE_IN_MB * 1024 * 1024))\
-                  / (MAX_KEY_LEN + 8 + BODY_LEN)
+#define NUM_DOCS ((TARGET_DOC_SIZE_IN_MB * 1024 * 1024))\
+                  / (KEY_LEN + 8 + BODY_LEN)
 
 #define TEST_FILENAME "./big_file"
 
@@ -54,54 +54,11 @@ struct writer_thread_args {
     fdb_commit_opt_t commit_opt;
 };
 
-struct compactor_thread_args {
-    volatile int num_files;
-    fdb_config config;
-};
-
 void logCallbackFunc(int err_code,
                      const char *err_msg,
                      void *pCtxData) {
     fprintf(stderr, "%s - error code: %d, error message: %s\n",
             (char *) pCtxData, err_code, err_msg);
-}
-
-static void *_compactor_thread(void *voidargs)
-{
-    TEST_INIT();
-    int revnum = 0;
-    struct compactor_thread_args *args = (struct compactor_thread_args *)
-                                         voidargs;
-    usleep(2000);
-    while(args->num_files) {
-        int num_files = args->num_files;
-        for (int i = 0; i < num_files; ++i) {
-            char filename[256];
-            fdb_status status;
-            fdb_file_handle *dbfile;
-            uint64_t num_markers;
-            fdb_snapshot_info_t *markers;
-            sprintf(filename, "%s_%d.%d", TEST_FILENAME, i, revnum);
-            status = fdb_open(&dbfile, filename, &args->config);
-            TEST_CHK(status == FDB_RESULT_SUCCESS);
-            status = fdb_get_all_snap_markers(dbfile, &markers, &num_markers);
-            if (status == FDB_RESULT_NO_DB_INSTANCE) {
-                usleep(1000);
-                fdb_close(dbfile);
-                continue;
-            }
-            TEST_CHK(status == FDB_RESULT_SUCCESS);
-            sprintf(filename, "%s_%d.%d", TEST_FILENAME, i, revnum+1);
-            status = fdb_compact_upto(dbfile, filename,
-                     num_markers > 5 ? markers[5].marker
-                                     : markers[num_markers].marker);
-            fdb_free_snap_markers(markers, num_markers);
-            fdb_close(dbfile);
-        }
-        revnum++;
-    }
-    thread_exit(0);
-    return NULL;
 }
 
 static void *_writer_thread(void *voidargs)
@@ -110,10 +67,10 @@ static void *_writer_thread(void *voidargs)
 
     struct writer_thread_args *args = (struct writer_thread_args *)voidargs;
     fdb_doc doc;
-    char bigKeyBuf[MAX_KEY_LEN*2];
+    char bigKeyBuf[KEY_LEN*2];
     char bigBodyBuf[BODY_LEN*2];
     fdb_file_handle *dbfile;
-    fdb_kvs_handle *db, *db2;
+    fdb_kvs_handle *db;
     fdb_status status;
     fdb_config fconfig = args->config;
     fdb_kvs_config kvs_config = args->kvs_config;
@@ -121,11 +78,7 @@ static void *_writer_thread(void *voidargs)
     status = fdb_open(&dbfile, args->test_file_name, &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     if (MULTI_KV) {
-        char kv2[256];
         status = fdb_kvs_open(dbfile, &db, args->kv_store_name, &kvs_config);
-        TEST_CHK(status == FDB_RESULT_SUCCESS);
-        sprintf(kv2, "%s_back", args->kv_store_name);
-        status = fdb_kvs_open(dbfile, &db2, kv2, &kvs_config);
     } else {
         status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
     }
@@ -136,7 +89,7 @@ static void *_writer_thread(void *voidargs)
 
     memset(&doc, 0, sizeof(fdb_doc));
     doc.key = &bigKeyBuf[0];
-    doc.keylen = MAX_KEY_LEN;
+    doc.keylen = KEY_LEN;
     doc.body = &bigBodyBuf[0];
     doc.bodylen = BODY_LEN;
 
@@ -146,35 +99,19 @@ static void *_writer_thread(void *voidargs)
 
     for (int j = args->docid_high - 1; j >= args->docid_low; --j) {
         char keyfmt[8], bodyfmt[8];
-        unsigned int rand_keylen = 1 + rand() % MAX_KEY_LEN;
-        sprintf(keyfmt, "%%%dd", rand_keylen);
+        sprintf(keyfmt, "%%%dd", KEY_LEN);
         sprintf(bigKeyBuf, keyfmt, j);
         sprintf(bodyfmt, "%%%dd", BODY_LEN);
         sprintf(bigBodyBuf, bodyfmt, j);
-        doc.keylen = rand_keylen + 1;
         status = fdb_set(db, &doc);
         TEST_CHK(status == FDB_RESULT_SUCCESS);
 
-        // insert into back index
-        status = fdb_set(db2, &doc);
-        TEST_CHK(status == FDB_RESULT_SUCCESS);
         // Commit based on batch-size set..
         if (j && j % args->batch_size == 0) {
-            if (MULTI_KV) {
-                char temp[256];
-                sprintf(temp, "%s_meta", args->kv_store_name);
-                fdb_kvs_handle *db3;
-                status = fdb_kvs_open(dbfile, &db3, temp, &kvs_config);
-                TEST_CHK(status == FDB_RESULT_SUCCESS);
-                sprintf(bigKeyBuf, "foo");
-                doc.keylen = 3;
-                status = fdb_set(db3, &doc);
-                TEST_CHK(status == FDB_RESULT_SUCCESS);
-                fdb_kvs_close(db3);
-            }
             status = fdb_commit(dbfile, args->commit_opt);
             TEST_CHK(status == FDB_RESULT_SUCCESS);
         }
+        printf("commiting doc %d\n", j);
     }
 
     fdb_close(dbfile);
@@ -190,7 +127,7 @@ void multi_writers(const char *test_name) {
     memleak_start();
 
     int num_writers = NUM_WRITERS;
-    int64_t writer_shard_size = NUM_DOCS / NUM_WRITERS;
+    int writer_shard_size = NUM_DOCS / NUM_WRITERS;
     fdb_file_handle *dbfile;
     fdb_config fconfig;
     int r;
@@ -198,9 +135,6 @@ void multi_writers(const char *test_name) {
     struct writer_thread_args *wargs = alca(struct writer_thread_args,
                                        num_writers);
     thread_t *tid = alca(thread_t, num_writers);
-    thread_t *compactor_tid = alca(thread_t, 1);
-    void **compactor_ret = alca(void *, 1);
-    struct compactor_thread_args *cargs = alca(struct compactor_thread_args, 1);
     void **thread_ret = alca(void *, num_writers);
     struct timeval ts_begin, ts_cur, ts_gap;
 
@@ -208,11 +142,11 @@ void multi_writers(const char *test_name) {
     r = system(SHELL_DEL TEST_FILENAME "* > errorlog.txt");
     (void) r;
 
-    printf("\nLoading %" _F64 " docs %d key length %d bodylen."
+    printf("\nLoading %d docs %d key length %d bodylen."
            " Buffercache %" _F64 "MB. Target docsize %" _F64 "MB...",
-            NUM_DOCS, MAX_KEY_LEN, BODY_LEN,
+            NUM_DOCS, KEY_LEN, BODY_LEN,
             BUFFERCACHE_SIZE ? (uint64_t)BUFFERCACHE_SIZE/ (1024 * 1024) : 0,
-            (uint64_t)(MAX_KEY_LEN + BODY_LEN + 8) * NUM_DOCS / (1024 * 1024));
+            (uint64_t)(KEY_LEN + BODY_LEN + 8) * NUM_DOCS / (1024 * 1024));
     gettimeofday(&ts_begin, NULL);
 
     fconfig = fdb_get_default_config();
@@ -228,24 +162,18 @@ void multi_writers(const char *test_name) {
         wargs[i].docid_high = ((i + 1) * writer_shard_size) - 1;
         wargs[i].config = fconfig;
         wargs[i].kvs_config = fdb_get_default_kvs_config();
-        wargs[i].batch_size = NUM_DOCS / 1000;
+        wargs[i].batch_size = NUM_DOCS;
         wargs[i].commit_opt = FDB_COMMIT_MANUAL_WAL_FLUSH;
-        sprintf(wargs[i].test_file_name, "%s_%d.0", TEST_FILENAME, i);
-        sprintf(wargs[i].kv_store_name, "kv_%d", 0);
+        sprintf(wargs[i].test_file_name, "%s", TEST_FILENAME);
+        sprintf(wargs[i].kv_store_name, "kv_%d", i);
 
         thread_create(&tid[i], _writer_thread, &wargs[i]);
     }
-
-    cargs->num_files = num_writers;
-    cargs->config = fconfig;
-    thread_create(compactor_tid, _compactor_thread, cargs);
 
     // wait for thread termination
     for (int i = 0; i < num_writers; ++i) {
         thread_join(tid[i], &thread_ret[i]);
     }
-    cargs->num_files = 0; // ask compactor to stop
-    thread_join(*compactor_tid, compactor_ret);
 
     status = fdb_commit(dbfile, FDB_COMMIT_MANUAL_WAL_FLUSH);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -253,8 +181,8 @@ void multi_writers(const char *test_name) {
     gettimeofday(&ts_cur, NULL);
     ts_gap = _utime_gap(ts_begin, ts_cur);
 
-    printf("\nFile created %" _F64 " docs loaded (keylen %d doclen %d) in"
-           "%ldsec", NUM_DOCS, MAX_KEY_LEN, BODY_LEN, ts_gap.tv_sec);
+    printf("\nFile created %d docs loaded (keylen %d doclen %d) in %ldsec",
+        NUM_DOCS, KEY_LEN, BODY_LEN, ts_gap.tv_sec);
 
     printf("\nStarting compaction...");
     printf("\n"); // flush stdio buffer

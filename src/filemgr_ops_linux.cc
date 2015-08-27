@@ -72,6 +72,9 @@ ssize_t _filemgr_linux_pread(int fd, void *buf, size_t count, cs_off_t offset)
     return rv;
 }
 
+ssize_t _filemgr_linux_getblksize(int fd)
+{
+}
 int _filemgr_linux_close(int fd)
 {
     int rv = 0;
@@ -444,6 +447,7 @@ struct filemgr_ops linux_ops = {
     _filemgr_linux_open,
     _filemgr_linux_pwrite,
     _filemgr_linux_pread,
+    _filemgr_linux_getblksize,
     _filemgr_linux_close,
     _filemgr_linux_goto_eof,
     _filemgr_linux_file_size,

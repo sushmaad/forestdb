@@ -31,7 +31,7 @@ add_executable(bcache_test
                ${ROOT_UTILS}/memleak.cc
                ${ROOT_UTILS}/partiallock.cc
                ${ROOT_UTILS}/time_utils.cc)
-target_link_libraries(bcache_test ${PTHREAD_LIB} ${LIBM}
+target_link_libraries(bcache_test ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES}
                       ${BACKTRACE_LIBRARIES} ${PLATFORM_LIBRARY})
 add_executable(atomic_test
@@ -58,7 +58,7 @@ add_executable(filemgr_test
                ${ROOT_UTILS}/memleak.cc
                ${ROOT_UTILS}/partiallock.cc
                ${ROOT_UTILS}/time_utils.cc)
-target_link_libraries(filemgr_test ${PTHREAD_LIB} ${LIBM}
+target_link_libraries(filemgr_test ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES}
                       ${BACKTRACE_LIBRARIES} ${PLATFORM_LIBRARY})
 
@@ -84,7 +84,7 @@ add_executable(btreeblock_test
                ${ROOT_UTILS}/memleak.cc
                ${ROOT_UTILS}/partiallock.cc
                ${ROOT_UTILS}/time_utils.cc)
-target_link_libraries(btreeblock_test ${PTHREAD_LIB} ${LIBM}
+target_link_libraries(btreeblock_test ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES}
                       ${BACKTRACE_LIBRARIES} ${PLATFORM_LIBRARY})
 
@@ -108,7 +108,7 @@ add_executable(docio_test
                ${ROOT_UTILS}/memleak.cc
                ${ROOT_UTILS}/partiallock.cc
                ${ROOT_UTILS}/time_utils.cc)
-target_link_libraries(docio_test ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
+target_link_libraries(docio_test ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES}
                       ${BACKTRACE_LIBRARIES} ${PLATFORM_LIBRARY})
 
@@ -137,7 +137,7 @@ add_executable(hbtrie_test
                ${ROOT_UTILS}/memleak.cc
                ${ROOT_UTILS}/partiallock.cc
                ${ROOT_UTILS}/time_utils.cc)
-target_link_libraries(hbtrie_test ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
+target_link_libraries(hbtrie_test ${UFTL_LIB} ${PTHREAD_LIB} ${LIBM} ${SNAPPY_LIBRARIES}
                       ${ASYNC_IO_LIB} ${MALLOC_LIBRARIES}
                       ${BACKTRACE_LIBRARIES} ${PLATFORM_LIBRARY})
 

@@ -98,6 +98,10 @@ ssize_t _filemgr_win_pread(int fd, void *buf, size_t count, cs_off_t offset)
     return (ssize_t) bytesread;
 }
 
+ssize_t _filemgr_win_getblksize(int fd)
+{
+  return 0;
+}
 int _filemgr_win_close(int fd)
 {
 #ifdef _MSC_VER
@@ -236,6 +240,7 @@ struct filemgr_ops win_ops = {
     _filemgr_win_open,
     _filemgr_win_pwrite,
     _filemgr_win_pread,
+    _filemgr_win_getblksize,
     _filemgr_win_close,
     _filemgr_win_goto_eof,
     _filemgr_win_file_size,

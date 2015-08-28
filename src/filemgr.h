@@ -105,6 +105,7 @@ struct filemgr_ops {
                          int max, unsigned int timeout);
     int (*aio_destroy)(struct async_io_handle *aio_handle);
     int (*get_fs_type)(int src_fd);
+    bool (*does_file_exist)(const char *filename);
     int (*copy_file_range)(int fs_type, int src_fd, int dst_fd,
                            uint64_t src_off, uint64_t dst_off, uint64_t len);
 };

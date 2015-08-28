@@ -417,6 +417,13 @@ int _filemgr_linux_get_fs_type(int src_fd)
 #endif
 }
 
+bool _filemgr_linux_does_file_exist(const char *filename)
+{
+  struct stat st;
+  int result = stat(filename, &st);
+  return result == 0;
+}
+
 int _filemgr_linux_copy_file_range(int fs_type,
                                    int src_fd, int dst_fd, uint64_t src_off,
                                    uint64_t dst_off, uint64_t len)
@@ -461,6 +468,7 @@ struct filemgr_ops linux_ops = {
     _filemgr_aio_getevents,
     _filemgr_aio_destroy,
     _filemgr_linux_get_fs_type,
+    _filemgr_linux_does_file_exist,
     _filemgr_linux_copy_file_range
 };
 

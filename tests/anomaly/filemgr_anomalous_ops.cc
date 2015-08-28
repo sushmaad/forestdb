@@ -165,6 +165,12 @@ int _get_fs_type_cb(void *ctx, struct filemgr_ops *normal_ops, int src)
     return normal_ops->get_fs_type(src);
 }
 
+bool _does_file_exist_cb(void *ctx, struct filemgr_ops *normal_ops,
+    const char *filename)
+{
+    return normal_ops->does_file_exist(filename);
+}
+
 int _copy_file_range_cb(void *ctx, struct filemgr_ops *normal_ops,
                         int fstype, int src, int dst, uint64_t src_off,
                         uint64_t dst_off, uint64_t len)
@@ -189,6 +195,7 @@ struct anomalous_callbacks default_callbacks = {
     _aio_getevents_cb,
     _aio_destroy_cb,
     _get_fs_type_cb,
+    _does_file_exist_cb,
     _copy_file_range_cb
 };
 
@@ -297,6 +304,10 @@ int _filemgr_anomalous_get_fs_type(int src_fd)
 {
     return anon_cbs->get_fs_type_cb(anon_ctx, normal_filemgr_ops, src_fd);
 }
+bool _filemgr_anomalous_does_file_exist(const char *file_name)
+{
+    return anon_cbs->does_file_exist_cb(anon_ctx, normal_filemgr_ops, file_name);
+}
 
 int _filemgr_anomalous_copy_file_range(int fs_type, int src_fd, int dst_fd,
                                        uint64_t src_off, uint64_t dst_off,
@@ -323,6 +334,7 @@ struct filemgr_ops anomalous_ops = {
     _filemgr_anomalous_aio_getevents,
     _filemgr_anomalous_aio_destroy,
     _filemgr_anomalous_get_fs_type,
+    _filemgr_anomalous_does_file_exist,
     _filemgr_anomalous_copy_file_range
 };
 

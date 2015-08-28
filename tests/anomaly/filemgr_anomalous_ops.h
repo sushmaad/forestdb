@@ -59,6 +59,8 @@ struct anomalous_callbacks {
                           struct async_io_handle *aio_handle);
     int (*get_fs_type_cb)(void *ctx, struct filemgr_ops *normal_ops,
                           int src_fd);
+    bool (*does_file_exist_cb)(void *ctx, struct filemgr_ops *normal_ops,
+                          const char *file_name);
     int (*copy_file_range_cb)(void *ctx, struct filemgr_ops *normal_ops,
                               int fs_type, int src_fd, int dst_fd,
                               uint64_t src_off, uint64_t dst_off, uint64_t len);

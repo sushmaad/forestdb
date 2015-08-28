@@ -120,17 +120,10 @@ struct timespec convert_reltime_to_abstime(unsigned int ms) {
 }
 #endif
 
-#if !defined(WIN32) && !defined(_WIN32)
 static bool does_file_exist(const char *filename) {
-    struct stat st;
-    int result = stat(filename, &st);
-    return result == 0;
+  struct filemgr_ops *ops = get_filemgr_ops();
+    return ops->does_file_exist(filename);
 }
-#else
-static bool does_file_exist(const char *filename) {
-    return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
-}
-#endif
 
 // compares file names
 int _compactor_cmp(struct avl_node *a, struct avl_node *b, void *aux)

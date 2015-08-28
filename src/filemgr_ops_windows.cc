@@ -229,6 +229,11 @@ int _filemgr_win_get_fs_type(int src_fd)
     return FILEMGR_FS_NO_COW;
 }
 
+bool _filemgr_win_does_file_exist(const char *filename)
+{
+  return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
+}
+
 int _filemgr_win_copy_file_range(int fstype, int src_fd, int dst_fd,
                                  uint64_t src_off, uint64_t dst_off,
                                  uint64_t len)
@@ -254,6 +259,7 @@ struct filemgr_ops win_ops = {
     _filemgr_aio_getevents,
     _filemgr_aio_destroy,
     _filemgr_win_get_fs_type,
+    _filemgr_win_does_file_exist,
     _filemgr_win_copy_file_range
 };
 

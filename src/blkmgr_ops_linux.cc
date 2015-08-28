@@ -79,7 +79,7 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
     if (fd < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to open store %d, %s\n", fd, errStr);
+        printf("failed to open store %s %d, %s\n", pathname, fd, errStr);
         if (fd == OSD_ERR_STORE_NOT_FOUND) {
             return (int) FDB_RESULT_NO_SUCH_FILE;
         } else {
@@ -168,13 +168,7 @@ cs_off_t _blkmgr_linux_goto_eof(int fd)
 // LCOV_EXCL_START
 cs_off_t _blkmgr_linux_file_size(const char *filename)
 {
-  //TODO first check with store if return value is  store not found
-  //check with filesystem
-    struct stat st;
-    if (stat(filename, &st) == -1) {
-        return (cs_off_t) FDB_RESULT_READ_FAIL;
-    }
-    return st.st_size;
+
 }
 // LCOV_EXCL_STOP
 
@@ -208,6 +202,8 @@ int _blkmgr_aio_init(struct async_io_handle *aio_handle)
     if (!aio_handle) {
         return FDB_RESULT_INVALID_ARGS;
     }
+    return FDB_RESULT_AIO_NOT_SUPPORTED;
+#if 0
     if (!aio_handle->queue_depth || aio_handle->queue_depth > 512) {
         aio_handle->queue_depth =  ASYNC_IO_QUEUE_DEPTH;
     }
@@ -237,6 +233,7 @@ int _blkmgr_aio_init(struct async_io_handle *aio_handle)
         return FDB_RESULT_AIO_INIT_FAIL;
     }
     return FDB_RESULT_SUCCESS;
+#endif
 #else
     return FDB_RESULT_AIO_NOT_SUPPORTED;
 #endif
@@ -246,6 +243,8 @@ int _blkmgr_aio_prep_read(struct async_io_handle *aio_handle, size_t aio_idx,
                            size_t read_size, uint64_t offset)
 {
 #ifdef _ASYNC_IO
+    return FDB_RESULT_AIO_NOT_SUPPORTED;
+#if 0
     if (!aio_handle) {
         return FDB_RESULT_INVALID_ARGS;
     }
@@ -257,6 +256,7 @@ int _blkmgr_aio_prep_read(struct async_io_handle *aio_handle, size_t aio_idx,
     aio_handle->offset_array[aio_idx] = offset;
     aio_handle->ioq[aio_idx]->data = &aio_handle->offset_array[aio_idx];
     return FDB_RESULT_SUCCESS;
+#endif
 #else
     return FDB_RESULT_AIO_NOT_SUPPORTED;
 #endif
@@ -265,6 +265,8 @@ int _blkmgr_aio_prep_read(struct async_io_handle *aio_handle, size_t aio_idx,
 int _blkmgr_aio_submit(struct async_io_handle *aio_handle, int num_subs)
 {
 #ifdef _ASYNC_IO
+    return FDB_RESULT_AIO_NOT_SUPPORTED;
+#if 0
     if (!aio_handle) {
         return FDB_RESULT_INVALID_ARGS;
     }
@@ -273,6 +275,7 @@ int _blkmgr_aio_submit(struct async_io_handle *aio_handle, int num_subs)
         return FDB_RESULT_AIO_SUBMIT_FAIL;
     }
     return rc; // 'rc' should be equal to 'num_subs' upon succcess.
+#endif
 #else
     return FDB_RESULT_AIO_NOT_SUPPORTED;
 #endif
@@ -285,7 +288,8 @@ int _blkmgr_aio_getevents(struct async_io_handle *aio_handle, int min,
     if (!aio_handle) {
         return FDB_RESULT_INVALID_ARGS;
     }
-
+    return FDB_RESULT_AIO_NOT_SUPPORTED;
+#if 0
     // Passing max timeout (ms) means that it waits until at least 'min' events
     // have been seen.
     bool wait_for_min = true;
@@ -303,6 +307,7 @@ int _blkmgr_aio_getevents(struct async_io_handle *aio_handle, int min,
         return FDB_RESULT_AIO_GETEVENTS_FAIL;
     }
     return num_events;
+#endif
 #else
     return FDB_RESULT_AIO_NOT_SUPPORTED;
 #endif
@@ -314,6 +319,8 @@ int _blkmgr_aio_destroy(struct async_io_handle *aio_handle)
     if (!aio_handle) {
         return FDB_RESULT_INVALID_ARGS;
     }
+    return FDB_RESULT_AIO_NOT_SUPPORTED;
+#if 0
 
     io_queue_release(aio_handle->ioctx);
     for(size_t k = 0; k < aio_handle->queue_depth; ++k)
@@ -325,6 +332,7 @@ int _blkmgr_aio_destroy(struct async_io_handle *aio_handle)
     free_align(aio_handle->aio_buf);
     free(aio_handle->offset_array);
     return FDB_RESULT_SUCCESS;
+#endif
 #else
     return FDB_RESULT_AIO_NOT_SUPPORTED;
 #endif
@@ -343,6 +351,11 @@ int _blkmgr_linux_get_fs_type(int src_fd)
         ret = FILEMGR_FS_NO_COW;
     }
     return ret;
+}
+
+bool _blkmgr_linux_does_file_exist(const char *filename)
+{
+  return store_exist(osdid, filename);
 }
 
 int _blkmgr_linux_copy_file_range(int fs_type,
@@ -371,6 +384,7 @@ struct filemgr_ops blk_linux_ops = {
     _blkmgr_aio_getevents,
     _blkmgr_aio_destroy,
     _blkmgr_linux_get_fs_type,
+    _blkmgr_linux_does_file_exist,
     _blkmgr_linux_copy_file_range
 };
 

@@ -240,8 +240,88 @@ int _filemgr_win_copy_file_range(int fstype, int src_fd, int dst_fd,
 {
     return FDB_RESULT_INVALID_ARGS;
 }
+void _filemgr_win_get_dir_n_prefix(const char *filename, char *dirname, char *prefix)
+{
+    int i;
+    int filename_len;
+    int dirname_len;
 
-struct filemgr_ops win_ops = {
+    filename_len = strlen(filename);
+    dirname_len = 0;
+    for (i=filename_len-1; i>=0; --i){
+        if (filename[i] == '/' || filename[i] == '\\') {
+            dirname_len = i+1;
+            break;
+        }
+    }
+
+    if (dirname_len > 0) {
+        strncpy(dirname, filename, dirname_len);
+        dirname[dirname_len] = 0;
+    } else {
+        strcpy(dirname, ".");
+    }
+    strcpy(prefix, filename + dirname_len);
+    strcat(prefix, ".");
+
+}
+
+fdb_status _filemgr_win_search_n_destroy(const char *filename, char *dirname, char *prefix)
+{
+    fdb_status fs = FDB_RESULT_SUCCESS;
+    WIN32_FIND_DATA filedata;
+    HANDLE hfind;
+    char query_str[MAX_FNAMELEN];
+    // find all files start with 'prefix'
+    sprintf(query_str, "%s*", prefix);
+    hfind = FindFirstFile(query_str, &filedata);
+    while (hfind != INVALID_HANDLE_VALUE) {
+        if (!strncmp(filedata.cFileName, prefix, strlen(prefix))) {
+            // Need to check filemgr for possible open entry?
+            if (remove(filedata.cFileName)) {
+                fs = FDB_RESULT_FILE_REMOVE_FAIL;
+                FindClose(hfind);
+                hfind = INVALID_HANDLE_VALUE;
+                return fs;
+            }
+        }
+
+        if (!FindNextFile(hfind, &filedata)) {
+            FindClose(hfind);
+            hfind = INVALID_HANDLE_VALUE;
+        }
+    }
+    
+    return fs;
+}
+void _filemgr_win_update_compaction_no(const char *pathname, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no)
+{
+        WIN32_FIND_DATA filedata;
+        HANDLE hfind;
+        char query_str[MAX_FNAMELEN];
+
+        // find all files start with 'prefix'
+        sprintf(query_str, "%s*", prefix);
+        hfind = FindFirstFile(query_str, &filedata);
+        while (hfind != INVALID_HANDLE_VALUE) {
+            if (!strncmp(filedata.cFileName, prefix, strlen(prefix))) {
+                *compaction_no = -1;
+                sscanf(filedata.cFileName + strlen(prefix), "%d", compaction_no);
+                if (*compaction_no >= 0) {
+                    if (*compaction_no > *max_compaction_no) {
+                        *max_compaction_no = *compaction_no;
+                    }
+                }
+            }
+
+            if (!FindNextFile(hfind, &filedata)) {
+                FindClose(hfind);
+                hfind = INVALID_HANDLE_VALUE;
+            }
+        }
+
+}
+struct filemgr_ ps win_ops = {
     _filemgr_win_open,
     _filemgr_win_pwrite,
     _filemgr_win_pread,
@@ -260,7 +340,10 @@ struct filemgr_ops win_ops = {
     _filemgr_aio_destroy,
     _filemgr_win_get_fs_type,
     _filemgr_win_does_file_exist,
-    _filemgr_win_copy_file_range
+    _filemgr_win_copy_file_range,
+    _filemgr_win_get_dir_n_prefix,
+    _filemgr_win_search_n_destroy,
+    _filemgr_win_update_compaction_no
 };
 
 struct filemgr_ops * get_win_filemgr_ops()

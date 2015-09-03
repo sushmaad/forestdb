@@ -870,15 +870,17 @@ fdb_status compactor_get_actual_filename(const char *filename,
                                          fdb_compaction_mode_t comp_mode,
                                          err_log_callback *log_callback)
 {
-    int i;
-    int filename_len;
-    int dirname_len;
     int compaction_no, max_compaction_no = -1;
     char path[MAX_FNAMELEN];
-    char dirname[MAX_FNAMELEN], prefix[MAX_FNAMELEN];
     char ret_name[MAX_FNAMELEN];
+
     fdb_status fs = FDB_RESULT_SUCCESS;
+
     struct compactor_meta meta, *meta_ptr;
+    char dirname[MAX_FNAMELEN], prefix[MAX_FNAMELEN];
+    struct filemgr_ops *ops;
+    ops = get_filemgr_ops();
+    ops->get_dir_n_prefix(filename, dirname, prefix);
 
     // get actual filename from metafile
     sprintf(path, "%s.meta", filename);
@@ -889,90 +891,13 @@ fdb_status compactor_get_actual_filename(const char *filename,
             strcpy(actual_filename, filename);
             return FDB_RESULT_SUCCESS;
         }
-
         // error handling .. scan directory
         // backward search until find the first '/' or '\' (Windows)
-        filename_len = strlen(filename);
-        dirname_len = 0;
-
-#if !defined(WIN32) && !defined(_WIN32)
-        DIR *dir_info;
-        struct dirent *dir_entry;
-
-        for (i=filename_len-1; i>=0; --i){
-            if (filename[i] == '/') {
-                dirname_len = i+1;
-                break;
-            }
-        }
-
-        if (dirname_len > 0) {
-            strncpy(dirname, filename, dirname_len);
-            dirname[dirname_len] = 0;
-        } else {
-            strcpy(dirname, ".");
-        }
-        strcpy(prefix, filename + dirname_len);
-        strcat(prefix, ".");
-
-        dir_info = opendir(dirname);
-        if (dir_info != NULL) {
-            while ((dir_entry = readdir(dir_info))) {
-                if (!strncmp(dir_entry->d_name, prefix, strlen(prefix))) {
-                    compaction_no = -1;
-                    sscanf(dir_entry->d_name + strlen(prefix), "%d", &compaction_no);
-                    if (compaction_no >= 0) {
-                        if (compaction_no > max_compaction_no) {
-                            max_compaction_no = compaction_no;
-                        }
-                    }
-                }
-            }
-            closedir(dir_info);
-        }
-#else
+	
+    	ops->update_compaction_no(filename,dirname,prefix,&compaction_no, &max_compaction_no);
         // Windows
-        for (i=filename_len-1; i>=0; --i){
-            if (filename[i] == '/' || filename[i] == '\\') {
-                dirname_len = i+1;
-                break;
-            }
-        }
 
-        if (dirname_len > 0) {
-            strncpy(dirname, filename, dirname_len);
-            dirname[dirname_len] = 0;
-        } else {
-            strcpy(dirname, ".");
-        }
-        strcpy(prefix, filename + dirname_len);
-        strcat(prefix, ".");
 
-        WIN32_FIND_DATA filedata;
-        HANDLE hfind;
-        char query_str[MAX_FNAMELEN];
-
-        // find all files start with 'prefix'
-        sprintf(query_str, "%s*", prefix);
-        hfind = FindFirstFile(query_str, &filedata);
-        while (hfind != INVALID_HANDLE_VALUE) {
-            if (!strncmp(filedata.cFileName, prefix, strlen(prefix))) {
-                compaction_no = -1;
-                sscanf(filedata.cFileName + strlen(prefix), "%d", &compaction_no);
-                if (compaction_no >= 0) {
-                    if (compaction_no > max_compaction_no) {
-                        max_compaction_no = compaction_no;
-                    }
-                }
-            }
-
-            if (!FindNextFile(hfind, &filedata)) {
-                FindClose(hfind);
-                hfind = INVALID_HANDLE_VALUE;
-            }
-        }
-
-#endif
 
         if (max_compaction_no < 0) {
             if (comp_mode == FDB_COMPACTION_AUTO) {
@@ -1039,95 +964,16 @@ bool compactor_is_valid_mode(const char *filename, fdb_config *config)
 
 static fdb_status _compactor_search_n_destroy(const char *filename)
 {
-    int i;
-    int filename_len;
-    int dirname_len;
+
     char dirname[MAX_FNAMELEN], prefix[MAX_FNAMELEN];
-    fdb_status fs = FDB_RESULT_SUCCESS;
+    struct filemgr_ops *ops;
+    ops = get_filemgr_ops();
+    ops->get_dir_n_prefix(filename, dirname, prefix);
 
-    // error handling .. scan directory
-    // backward search until find the first '/' or '\' (Windows)
-    filename_len = strlen(filename);
-    dirname_len = 0;
+    fdb_status fd=ops->search_n_destroy(filename,dirname,prefix);
 
-#if !defined(WIN32) && !defined(_WIN32)
-    DIR *dir_info;
-    struct dirent *dir_entry;
+    return fd;
 
-    for (i=filename_len-1; i>=0; --i){
-        if (filename[i] == '/') {
-            dirname_len = i+1;
-            break;
-        }
-    }
-
-    if (dirname_len > 0) {
-        strncpy(dirname, filename, dirname_len);
-        dirname[dirname_len] = 0;
-    } else {
-        strcpy(dirname, ".");
-    }
-    strcpy(prefix, filename + dirname_len);
-    strcat(prefix, ".");
-
-    dir_info = opendir(dirname);
-    if (dir_info != NULL) {
-        while ((dir_entry = readdir(dir_info))) {
-            if (!strncmp(dir_entry->d_name, prefix, strlen(prefix))) {
-                // Need to check filemgr for possible open entry?
-                if (remove(dir_entry->d_name)) {
-                    fs = FDB_RESULT_FILE_REMOVE_FAIL;
-                    closedir(dir_info);
-                    return fs;
-                }
-            }
-        }
-        closedir(dir_info);
-    }
-#else
-    // Windows
-    for (i=filename_len-1; i>=0; --i){
-        if (filename[i] == '/' || filename[i] == '\\') {
-            dirname_len = i+1;
-            break;
-        }
-    }
-
-    if (dirname_len > 0) {
-        strncpy(dirname, filename, dirname_len);
-        dirname[dirname_len] = 0;
-    } else {
-        strcpy(dirname, ".");
-    }
-    strcpy(prefix, filename + dirname_len);
-    strcat(prefix, ".");
-
-    WIN32_FIND_DATA filedata;
-    HANDLE hfind;
-    char query_str[MAX_FNAMELEN];
-
-    // find all files start with 'prefix'
-    sprintf(query_str, "%s*", prefix);
-    hfind = FindFirstFile(query_str, &filedata);
-    while (hfind != INVALID_HANDLE_VALUE) {
-        if (!strncmp(filedata.cFileName, prefix, strlen(prefix))) {
-            // Need to check filemgr for possible open entry?
-            if (remove(filedata.cFileName)) {
-                fs = FDB_RESULT_FILE_REMOVE_FAIL;
-                FindClose(hfind);
-                hfind = INVALID_HANDLE_VALUE;
-                return fs;
-            }
-        }
-
-        if (!FindNextFile(hfind, &filedata)) {
-            FindClose(hfind);
-            hfind = INVALID_HANDLE_VALUE;
-        }
-    }
-
-#endif
-    return fs;
 }
 
 fdb_status compactor_destroy_file(char *filename,

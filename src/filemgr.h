@@ -108,6 +108,9 @@ struct filemgr_ops {
     bool (*does_file_exist)(const char *filename);
     int (*copy_file_range)(int fs_type, int src_fd, int dst_fd,
                            uint64_t src_off, uint64_t dst_off, uint64_t len);
+    void (*get_dir_n_prefix)(const char *pathname, char *dirname, char *prefix);
+    fdb_status (*search_n_destroy)(const char *pathname, char *dirname,  char *prefix);
+    void (*update_compaction_no)(const char *pathname, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no);
 };
 
 struct filemgr_buffer{

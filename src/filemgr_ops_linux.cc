@@ -450,6 +450,76 @@ int _filemgr_linux_copy_file_range(int fs_type,
     return ret;
 }
 
+void _filemgr_linux_get_dir_n_prefix(const char *filename, char *dirname, char *prefix)
+{
+    int i;
+    int filename_len;
+    int dirname_len;
+
+    filename_len = strlen(filename);
+    dirname_len = 0;
+
+    for (i=filename_len-1; i>=0; --i){
+        if (filename[i] == '/') {
+            dirname_len = i+1;
+            break;
+        }
+    }
+
+    if (dirname_len > 0) {
+        strncpy(dirname, filename, dirname_len);
+        dirname[dirname_len] = 0;
+    } else {
+        strcpy(dirname, ".");
+    }
+    strcpy(prefix, filename + dirname_len);
+    strcat(prefix, ".");
+
+}
+
+fdb_status _filemgr_linux_search_n_destroy(const char *filename, char *dirname, char *prefix)
+{
+    fdb_status fs = FDB_RESULT_SUCCESS;
+    DIR *dir_info;
+    struct dirent *dir_entry;
+    dir_info = opendir(dirname);
+    if (dir_info != NULL) {
+        while ((dir_entry = readdir(dir_info))) {
+            if (!strncmp(dir_entry->d_name, prefix, strlen(prefix))) {
+                // Need to check filemgr for possible open entry?
+                if (remove(dir_entry->d_name)) {
+                    fs = FDB_RESULT_FILE_REMOVE_FAIL;
+                    closedir(dir_info);
+                    return fs;
+                }
+            }
+        }
+        closedir(dir_info);
+    }
+
+}
+void _filemgr_linux_update_compaction_no(const char *filename, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no)
+{
+        DIR *dir_info;
+        struct dirent *dir_entry;
+
+        dir_info = opendir(dirname);
+        if (dir_info != NULL) {
+            while ((dir_entry = readdir(dir_info))) {
+                if (!strncmp(dir_entry->d_name, prefix, strlen(prefix))) {
+                    *compaction_no = -1;
+                    sscanf(dir_entry->d_name + strlen(prefix), "%d", compaction_no);
+                    if (*compaction_no >= 0) {
+                        if (*compaction_no > *max_compaction_no) {
+                            *max_compaction_no = *compaction_no;
+                        }
+                    }
+                }
+            }
+            closedir(dir_info);
+        }
+
+}
 struct filemgr_ops linux_ops = {
     _filemgr_linux_open,
     _filemgr_linux_pwrite,
@@ -469,7 +539,10 @@ struct filemgr_ops linux_ops = {
     _filemgr_aio_destroy,
     _filemgr_linux_get_fs_type,
     _filemgr_linux_does_file_exist,
-    _filemgr_linux_copy_file_range
+    _filemgr_linux_copy_file_range,
+    _filemgr_linux_get_dir_n_prefix,
+    _filemgr_linux_search_n_destroy,
+    _filemgr_linux_update_compaction_no
 };
 
 struct filemgr_ops * get_linux_filemgr_ops()

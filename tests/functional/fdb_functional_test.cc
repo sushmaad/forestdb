@@ -1151,7 +1151,6 @@ void db_destroy_test()
     status = fdb_set_log_callback(db, logCallbackFunc,
                                   (void *) "db_destroy_test");
     TEST_CHK(status == FDB_RESULT_SUCCESS);
-
     // insert 30 documents
     for (i=0;i<n;++i){
         sprintf(keybuf, "key%d", i);
@@ -1168,6 +1167,7 @@ void db_destroy_test()
     // Open the empty db with the same name.
     fdb_open(&dbfile2, "./dummy2", &fconfig);
     fdb_kvs_open(dbfile2, &db2, NULL, &kvs_config);
+    printf("test fdb 2-3\n");
     status = fdb_set_log_callback(db2, logCallbackFunc,
                                   (void *) "db_destroy_test");
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -1175,7 +1175,7 @@ void db_destroy_test()
     for (i=0;i<n;++i){
         fdb_set(db2, doc[i]);
     }
-
+ 
     // commit
     fdb_commit(dbfile2, FDB_COMMIT_NORMAL);
 

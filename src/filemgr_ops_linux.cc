@@ -23,6 +23,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/time.h>
+#include <dirent.h>
+#include <stdlib.h>
 
 #include "filemgr.h"
 #include "filemgr_ops.h"

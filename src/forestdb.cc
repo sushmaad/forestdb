@@ -537,14 +537,6 @@ fdb_status fdb_init(fdb_config *config)
             return FDB_RESULT_TOO_BIG_BUFFER_CACHE;
         }
 #endif
-        // initialize file manager and block cache
-        f_config.blocksize = _config.blocksize;
-        f_config.ncacheblock = _config.buffercache_size / _config.blocksize;
-        filemgr_init(&f_config);
-        filemgr_set_lazy_file_deletion(true,
-                                       compactor_register_file_removing,
-                                       compactor_is_file_removed);
-
         // initialize compaction daemon
         c_config.sleep_duration = _config.compactor_sleep_duration;
         c_config.num_threads = _config.num_compactor_threads;
@@ -1193,10 +1185,14 @@ fdb_status fdb_rollback_all(fdb_file_handle *fhandle,
 }
 
 static void _fdb_init_file_config(const fdb_config *config,
-                                  struct filemgr_config *fconfig) {
-    fconfig->blocksize = config->blocksize;
-    fconfig->ncacheblock = config->buffercache_size / config->blocksize;
-    fconfig->chunksize = config->chunksize;
+    struct filemgr_config *fconfig) {
+  fconfig->blocksize = config->blocksize;
+  fconfig->ncacheblock = config->buffercache_size / config->blocksize;
+  fconfig->chunksize = config->chunksize;
+
+  filemgr_set_lazy_file_deletion(true,
+      compactor_register_file_removing,
+        compactor_is_file_removed);
 
     fconfig->options = 0x0;
     if (config->flags & FDB_OPEN_FLAG_CREATE) {
@@ -1209,6 +1205,7 @@ static void _fdb_init_file_config(const fdb_config *config,
         fconfig->options |= FILEMGR_SYNC;
     }
 
+    fconfig->use_blkdevice = config->use_blkdevice;
     fconfig->flag = 0x0;
     if ((config->durability_opt & FDB_DRB_ODIRECT) &&
         config->buffercache_size) {
@@ -1358,12 +1355,14 @@ fdb_status _fdb_open(fdb_kvs_handle *handle,
         return FDB_RESULT_TOO_LONG_FILENAME;
     }
 
+    _fdb_init_file_config(config, &fconfig);
+    filemgr_init(&fconfig);
+
     if (filename_mode == FDB_VFILENAME &&
         !compactor_is_valid_mode(filename, (fdb_config *)config)) {
-        return FDB_RESULT_INVALID_COMPACTION_MODE;
+      return FDB_RESULT_INVALID_COMPACTION_MODE;
     }
 
-    _fdb_init_file_config(config, &fconfig);
 
     if (filename_mode == FDB_VFILENAME) {
         compactor_get_actual_filename(filename, actual_filename,
@@ -5520,6 +5519,8 @@ static fdb_status _fdb_reset(fdb_kvs_handle *handle, fdb_kvs_handle *handle_in)
     if (!(handle->config.durability_opt & FDB_DRB_ASYNC)) {
         fconfig.options |= FILEMGR_SYNC;
     }
+    fconfig.use_blkdevice = handle->config.use_blkdevice;
+    filemgr_init(&fconfig);
 
     // open same file again, so the root kv handle can be redirected to this
     result = filemgr_open((char *)handle->filename,
@@ -5595,6 +5596,7 @@ fdb_status fdb_compact_file(fdb_file_handle *fhandle,
     fconfig.num_wal_shards = handle->config.num_wal_partitions;
     fconfig.num_bcache_shards = handle->config.num_bcache_partitions;
     fconfig.flag = 0x0;
+    fconfig.use_blkdevice = handle->config.use_blkdevice;
 
     if ((handle->config.durability_opt & FDB_DRB_ODIRECT) &&
         handle->config.buffercache_size) {
@@ -5603,6 +5605,7 @@ fdb_status fdb_compact_file(fdb_file_handle *fhandle,
     if (!(handle->config.durability_opt & FDB_DRB_ASYNC)) {
         fconfig.options |= FILEMGR_SYNC;
     }
+    filemgr_init(&fconfig);
 
     // open new file
     filemgr_open_result result = filemgr_open((char *)new_filename,

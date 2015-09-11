@@ -43,6 +43,7 @@ fdb_config get_default_config(void) {
     fconfig.seqtree_opt = FDB_SEQTREE_USE;
     // Use a synchronous commit by default.
     fconfig.durability_opt = FDB_DRB_NONE;
+    fconfig.use_blkdevice = false;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     // 4MB by default.
     fconfig.compaction_buf_maxsize = FDB_COMP_BUF_MINSIZE;

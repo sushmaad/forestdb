@@ -111,7 +111,6 @@ static void *_writer_thread(void *voidargs)
             status = fdb_commit(dbfile, args->commit_opt);
             TEST_CHK(status == FDB_RESULT_SUCCESS);
         }
-        printf("commiting doc %d\n", j);
     }
 
     fdb_close(dbfile);

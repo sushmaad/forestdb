@@ -87,8 +87,6 @@ void write_failure_test()
     r = system(SHELL_DEL" anomaly_test* > errorlog.txt");
     (void)r;
 
-    // Reset anomalous behavior stats..
-    filemgr_ops_anomalous_init(write_fail_cb, &fail_ctx);
 
     // The number indicates the count after which all writes begin to fail
     // This number is unique to this test suite and can cause a segmentation
@@ -108,6 +106,9 @@ void write_failure_test()
     // open db
     fdb_open(&dbfile, "anomaly_test1", &fconfig);
     fdb_kvs_open_default(dbfile, &db, &kvs_config);
+
+    // Reset anomalous behavior stats..
+    filemgr_ops_anomalous_init(write_fail_cb, &fail_ctx);
 
     // key structure:
     // <------------ <keylen_limit> bytes ------------->
@@ -632,14 +633,14 @@ void copy_file_range_test()
 
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
 
-    // Create anomalous behavior with shared handle for the callback ctx
-    filemgr_ops_anomalous_init(cow_compact_cb, &append_delta);
 
     // open db
     status = fdb_open(&dbfile, "anomaly_test1a", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
+    // Create anomalous behavior with shared handle for the callback ctx
+    filemgr_ops_anomalous_init(cow_compact_cb, &append_delta);
 
     cb_args.handle = db;
     cb_args.ndocs = N;

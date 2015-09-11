@@ -50,6 +50,7 @@ extern "C" {
 #define FILEMGR_CREATE_CRC32 0x20 // Used in testing upgrade path
 
 struct filemgr_config {
+    bool use_blkdevice;
     int blocksize;
     int ncacheblock;
     int flag;
@@ -212,6 +213,7 @@ typedef struct {
 } filemgr_open_result;
 
 void filemgr_init(struct filemgr_config *config);
+struct filemgr_config* filemgr_get_config();
 void filemgr_set_lazy_file_deletion(bool enable,
                                     register_file_removal_func regis_func,
                                     check_file_removal_func check_func);

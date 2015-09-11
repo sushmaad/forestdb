@@ -234,6 +234,10 @@ void filemgr_init(struct filemgr_config *config)
         spin_unlock(&initial_lock);
     }
 }
+struct filemgr_config* filemgr_get_config()
+{
+  return &global_config;
+}
 
 void filemgr_set_lazy_file_deletion(bool enable,
                                     register_file_removal_func regis_func,
@@ -607,8 +611,6 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     int fd = -1;
     fdb_status status;
     filemgr_open_result result = {NULL, FDB_RESULT_OPEN_FAIL};
-
-    filemgr_init(config);
 
     // check whether file is already opened or not
     query.filename = filename;

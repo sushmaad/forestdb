@@ -40,7 +40,6 @@ static int filemgr_anomalous_behavior = 0;
 // The routines below are adapted from filemgr_ops.cc to add indirection
 struct filemgr_ops * get_win_filemgr_ops();
 struct filemgr_ops * get_linux_filemgr_ops();
-struct filemgr_ops * get_linux_blkmgr_ops();
 struct filemgr_ops * get_filemgr_ops()
 {
     if (filemgr_anomalous_behavior) {
@@ -51,12 +50,8 @@ struct filemgr_ops * get_filemgr_ops()
     // windows
     return get_win_filemgr_ops();
 #else
-#if defined BLKDEV
-    return get_linux_blkmgr_ops();
-#else
      // linux, mac os x
-     return get_linux_filemgr_ops();
- #endif
+    return get_linux_filemgr_ops();
 #endif
 }
 

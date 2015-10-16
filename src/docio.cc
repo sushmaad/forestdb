@@ -90,6 +90,10 @@ bid_t docio_append_doc_raw(struct docio_handle *handle, uint64_t size, void *buf
     blocksize -= BLK_MARKER_SIZE;
     memset(marker, BLK_MARKER_DOC, BLK_MARKER_SIZE);
 #endif
+    //if raw block device sync before allocating
+    if (handle->file->rawblksize) {
+      filemgr_sync(handle->file, log_callback);
+    }
 
     if (handle->curblock == BLK_NOT_FOUND) {
         // allocate new block

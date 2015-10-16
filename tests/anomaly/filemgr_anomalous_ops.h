@@ -35,13 +35,18 @@ struct anomalous_callbacks {
                          int fd, void *buf, size_t count, cs_off_t offset);
     ssize_t (*pread_cb)(void *ctx, struct filemgr_ops *normal_ops,
                         int fd, void *buf, size_t count, cs_off_t offset);
-    ssize_t (*getblksize_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
+    ssize_t (*getblk_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd,
+        uint64_t addr);
+    int (*changemode_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd,
+        int flags);
     int (*close_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     cs_off_t (*goto_eof_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     cs_off_t (*file_size_cb)(void *ctx, struct filemgr_ops *normal_ops,
                              const char *filename);
     int (*fdatasync_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     int (*fsync_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
+    int (*fsync2_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd,
+        uint64_t addr);
     void (*get_errno_str_cb)(void *ctx, struct filemgr_ops *normal_ops,
                              char *buf, size_t size);
     int (*aio_init_cb)(void *ctx, struct filemgr_ops *normal_ops,

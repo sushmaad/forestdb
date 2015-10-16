@@ -329,7 +329,7 @@ typedef struct {
       *If set to true ForestDB works directly on raw block device
       *instead of file system
       */
-    bool use_blkdevice;
+    uint32_t rawblksize;
     /**
      * Flags for fdb_open API. It can be used for specifying read-only mode.
      * This is a local config to each ForestDB file.

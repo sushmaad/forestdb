@@ -82,9 +82,16 @@ ssize_t _pread_cb(void *ctx, struct filemgr_ops *normal_ops,
     return normal_ops->pread(fd, buf, count, offset);
 }
 
-ssize_t _getblksize_cb(void *ctx, struct filemgr_ops *normal_ops, int fd)
+ssize_t _getblk_cb(void *ctx, struct filemgr_ops *normal_ops, int fd,
+    uint64_t addr)
 {
-    return normal_ops->getblksize(fd);
+    return normal_ops->getblk(fd, addr);
+}
+
+int _changemode_cb(void *ctx, struct filemgr_ops *normal_ops, int fd,
+    int flags)
+{
+    return normal_ops->changemode(fd, flags);
 }
 
 int _close_cb(void *ctx, struct filemgr_ops *normal_ops,
@@ -115,6 +122,12 @@ int _fsync_cb(void *ctx, struct filemgr_ops *normal_ops,
               int fd)
 {
     return normal_ops->fsync(fd);
+}
+
+int _fsync2_cb(void *ctx, struct filemgr_ops *normal_ops,
+              int fd, uint64_t addr)
+{
+    return normal_ops->fsyncblk(fd, addr);
 }
 
 void _get_errno_str_cb(void *ctx, struct filemgr_ops *normal_ops,
@@ -177,12 +190,14 @@ struct anomalous_callbacks default_callbacks = {
     _open_cb,
     _pwrite_cb,
     _pread_cb,
-    _getblksize_cb,
+    _getblk_cb,
+    _changemode_cb,
     _close_cb,
     _goto_eof_cb,
     _file_size_cb,
     _fdatasync_cb,
     _fsync_cb,
+    _fsync2_cb,
     _get_errno_str_cb,
     _aio_init_cb,
     _aio_prep_read_cb,
@@ -230,9 +245,14 @@ ssize_t _filemgr_anomalous_pread(int fd, void *buf, size_t count,
     return anon_cbs->pread_cb(anon_ctx, normal_filemgr_ops, fd, buf, count,
                               offset);
 }
-ssize_t _filemgr_anomalous_getblksize(int fd)
+ssize_t _filemgr_anomalous_getblk(int fd, uint64_t addr)
 {
-    return anon_cbs->getblksize_cb(anon_ctx, normal_filemgr_ops, fd);
+    return anon_cbs->getblk_cb(anon_ctx, normal_filemgr_ops, fd, addr);
+}
+
+int _filemgr_anomalous_changemode(int fd, int flags)
+{
+    return anon_cbs->changemode_cb(anon_ctx, normal_filemgr_ops, fd, flags);
 }
 
 int _filemgr_anomalous_close(int fd)
@@ -253,6 +273,11 @@ cs_off_t _filemgr_anomalous_file_size(const char *filename)
 int _filemgr_anomalous_fsync(int fd)
 {
     return anon_cbs->fsync_cb(anon_ctx, normal_filemgr_ops, fd);
+}
+
+int _filemgr_anomalous_fsync2(int fd, uint64_t addr)
+{
+    return anon_cbs->fsync2_cb(anon_ctx, normal_filemgr_ops, fd, addr);
 }
 
 int _filemgr_anomalous_fdatasync(int fd)
@@ -316,12 +341,14 @@ struct filemgr_ops anomalous_ops = {
     _filemgr_anomalous_open,
     _filemgr_anomalous_pwrite,
     _filemgr_anomalous_pread,
-    _filemgr_anomalous_getblksize,
+    _filemgr_anomalous_getblk,
+    _filemgr_anomalous_changemode,
     _filemgr_anomalous_close,
     _filemgr_anomalous_goto_eof,
     _filemgr_anomalous_file_size,
     _filemgr_anomalous_fdatasync,
     _filemgr_anomalous_fsync,
+    _filemgr_anomalous_fsync2,
     _filemgr_anomalous_get_errno_str,
     _filemgr_anomalous_aio_init,
     _filemgr_anomalous_aio_prep_read,

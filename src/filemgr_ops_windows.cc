@@ -98,7 +98,12 @@ ssize_t _filemgr_win_pread(int fd, void *buf, size_t count, cs_off_t offset)
     return (ssize_t) bytesread;
 }
 
-ssize_t _filemgr_win_getblksize(int fd)
+ssize_t _filemgr_win_getblk(int fd, uint64_t addr)
+{
+  return 0;
+}
+
+int _filemgr_win_changemode(int fd, int flags)
 {
   return 0;
 }
@@ -170,6 +175,12 @@ int _filemgr_win_fsync(int fd)
     if (!FlushFileBuffers(file)) {
         return FDB_RESULT_FSYNC_FAIL;
     }
+    return FDB_RESULT_SUCCESS;
+}
+
+int _filemgr_win_fsync2(int fd, uint64_t addr)
+{
+  //dummy
     return FDB_RESULT_SUCCESS;
 }
 
@@ -325,12 +336,14 @@ struct filemgr_ ps win_ops = {
     _filemgr_win_open,
     _filemgr_win_pwrite,
     _filemgr_win_pread,
-    _filemgr_win_getblksize,
+    _filemgr_win_getblk,
+    _filemgr_win_changemode,
     _filemgr_win_close,
     _filemgr_win_goto_eof,
     _filemgr_win_file_size,
     _filemgr_win_fdatasync,
     _filemgr_win_fsync,
+    _filemgr_win_fsync2,
     _filemgr_win_get_errno_str,
     // Async I/O operations
     _filemgr_aio_init,

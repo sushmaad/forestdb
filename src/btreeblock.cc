@@ -405,6 +405,7 @@ INLINE void * _btreeblk_read(void *voidhandle, bid_t bid, int sb_no)
         dirty_block = _get_entry(dirty_avl, struct btreeblk_block, avl);
         memcpy(block->addr, dirty_block->addr, handle->file->blocksize);
     } else {
+    printf("reading btree block %d and addr %lu", block->bid, block->addr);
         fdb_status status = filemgr_read(handle->file, block->bid, block->addr,
                                          handle->log_callback, true);
         if (status != FDB_RESULT_SUCCESS) {
@@ -886,6 +887,7 @@ INLINE fdb_status _btreeblk_write_dirty_block(struct btreeblk_handle *handle,
     //2 MUST BE modified to support multiple nodes in a block
 
     _btreeblk_encode(handle, block);
+    printf("writing btree block %d and addr %lu", block->bid, block->addr);
     status = filemgr_write(handle->file, block->bid, block->addr,
                            handle->log_callback);
     if (status != FDB_RESULT_SUCCESS) {
@@ -1061,6 +1063,7 @@ fdb_status btreeblk_create_dirty_snapshot(struct btreeblk_handle *handle)
     for (cur_bid = commit_bid; cur_bid <= dirty_bid; cur_bid++) {
         // read block from file (most dirty blocks may be cached)
         block->bid = cur_bid;
+    printf("reading btree block %d and addr %lu", block->bid, block->addr);
         if ((fs = filemgr_read(handle->file, block->bid, block->addr,
                                handle->log_callback, true)) != FDB_RESULT_SUCCESS) {
             fdb_log(handle->log_callback, fs,

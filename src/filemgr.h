@@ -50,7 +50,7 @@ extern "C" {
 #define FILEMGR_CREATE_CRC32 0x20 // Used in testing upgrade path
 
 struct filemgr_config {
-    bool use_blkdevice;
+    uint32_t rawblksize;
     int blocksize;
     int ncacheblock;
     int flag;
@@ -89,12 +89,14 @@ struct filemgr_ops {
     int (*open)(const char *pathname, int flags, mode_t mode);
     ssize_t (*pwrite)(int fd, void *buf, size_t count, cs_off_t offset);
     ssize_t (*pread)(int fd, void *buf, size_t count, cs_off_t offset);
-    ssize_t (*getblksize)(int fd);
+    ssize_t (*getblk)(int fd, uint64_t addr);
+    int (*changemode)(int fd, int flags);
     int (*close)(int fd);
     cs_off_t (*goto_eof)(int fd);
     cs_off_t (*file_size)(const char *filename);
     int (*fdatasync)(int fd);
     int (*fsync)(int fd);
+    int (*fsyncblk)(int fd, uint64_t addr);
     void (*get_errno_str)(char *buf, size_t size);
 
     // Async I/O operations
@@ -158,9 +160,11 @@ struct filemgr {
     uint8_t fflags;
     uint16_t filename_len;
     uint32_t blocksize;
+    uint32_t rawblksize;
     int fd;
     atomic_uint64_t pos;
     atomic_uint64_t last_commit;
+    int64_t prevsyncrawblk;
     struct wal *wal;
     struct filemgr_header header;
     struct filemgr_ops *ops;
@@ -233,6 +237,7 @@ filemgr_open_result filemgr_open(char *filename,
                                  struct filemgr_config *config,
                                  err_log_callback *log_callback);
 
+int filemgr_change_mode(struct filemgr *file, int flags);
 uint64_t filemgr_update_header(struct filemgr *file, void *buf, size_t len);
 filemgr_header_revnum_t filemgr_get_header_revnum(struct filemgr *file);
 
@@ -285,7 +290,8 @@ fdb_status filemgr_read(struct filemgr *file,
                         bool read_on_cache_miss);
 
 fdb_status filemgr_write_offset(struct filemgr *file, bid_t bid, uint64_t offset,
-                          uint64_t len, void *buf, err_log_callback *log_callback);
+                          uint64_t len, void *buf, err_log_callback
+                          *log_callback);
 fdb_status filemgr_write(struct filemgr *file, bid_t bid, void *buf,
                    err_log_callback *log_callback);
 INLINE int filemgr_is_writable(struct filemgr *file, bid_t bid)
@@ -296,7 +302,7 @@ INLINE int filemgr_is_writable(struct filemgr *file, bid_t bid)
     // 2) file->last_commit is updated using the value of file->pos,
     //    and always equal to or smaller than file->pos.
     return (pos <  atomic_get_uint64_t(&file->pos) &&
-            pos >= atomic_get_uint64_t(&file->last_commit));
+      pos >= atomic_get_uint64_t(&file->last_commit));
 }
 void filemgr_remove_file(struct filemgr *file);
 

@@ -777,7 +777,12 @@ static fdb_status _wal_flush(struct filemgr *file,
     struct wal_item_header *header;
     size_t i = 0;
     size_t num_shards = file->wal->num_shards;
-
+    fdb_kvs_handle *handle = (fdb_kvs_handle *) dbhandle;
+    
+    if (file->rawblksize) {
+    //before doing wal_flush sync the raw block device
+     filemgr_sync(file, &handle->log_callback);
+    }
     // sort by old byte-offset of the document (for sequential access)
     avl_init(tree, NULL);
     for (; i < num_shards; ++i) {

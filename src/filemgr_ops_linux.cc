@@ -27,17 +27,16 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-#include <uftl/osd.h>
-#include <uftl/osd_types.h>
-#include <uftl/osd_err.h>
+#include <uftl/hcd.h>
+#include <uftl/hcd_types.h>
+#include <uftl/hcd_err.h>
 
 #include "filemgr.h"
 #include "filemgr_ops.h"
 using namespace std;
 
 #if !defined(WIN32) && !defined(_WIN32)
-
-int osdid = -1;
+int blkdevid = -1;
 
 int _filemgr_linux_open(const char *pathname, int flags, mode_t mode)
 {
@@ -82,9 +81,16 @@ ssize_t _filemgr_linux_pread(int fd, void *buf, size_t count, cs_off_t offset)
     return rv;
 }
 
-ssize_t _filemgr_linux_getblksize(int fd)
+ssize_t _filemgr_linux_getblk(int fd, uint64_t addr)
 {
+  return 0;
 }
+
+int _filemgr_linux_changemode(int fd, int flags)
+{
+  return 0;
+}
+
 int _filemgr_linux_close(int fd)
 {
     int rv = 0;
@@ -132,6 +138,12 @@ int _filemgr_linux_fsync(int fd)
         return FDB_RESULT_FSYNC_FAIL; // LCOV_EXCL_LINE
     }
 
+    return FDB_RESULT_SUCCESS;
+}
+
+int _filemgr_linux_fsync2(int fd, uint64_t addr)
+{
+  //dummy
     return FDB_RESULT_SUCCESS;
 }
 
@@ -506,7 +518,7 @@ fdb_status _filemgr_linux_search_n_destroy(const char *filename, char *dirname, 
         }
         closedir(dir_info);
     }
-
+    return fs;
 }
 void _filemgr_linux_update_compaction_no(const char *filename, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no)
 {
@@ -534,12 +546,14 @@ struct filemgr_ops linux_file_ops = {
     _filemgr_linux_open,
     _filemgr_linux_pwrite,
     _filemgr_linux_pread,
-    _filemgr_linux_getblksize,
+    _filemgr_linux_getblk,
+    _filemgr_linux_changemode,
     _filemgr_linux_close,
     _filemgr_linux_goto_eof,
     _filemgr_linux_file_size,
     _filemgr_linux_fdatasync,
     _filemgr_linux_fsync,
+    _filemgr_linux_fsync2,
     _filemgr_linux_get_errno_str,
     // Async I/O operations
     _filemgr_aio_init,
@@ -572,34 +586,27 @@ void _blkmgr_linux_get_errno_str(char *buf, size_t size) {
 
 int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 {
-    int rc = 0;
     int fd;
-    if (osdid < 0)
+    if (blkdevid < 0)
     {
-      char osd_name[256] = "osd1";
-      char pri_dev1[256] = "/tmp/osd-pri1";
-      char pri_dev2[256] = "/tmp/osd-pri2";
-      char *pri_dev[2];
-      pri_dev[0] = pri_dev1;
-      pri_dev[1] = pri_dev2;
-      //TODO remove hard coding
-      if ((osdid = osd_init(osd_name, pri_dev, 2, NULL, 0, NULL, 0, OSD_ALL_FLASH)) < 0)
+      char pri_dev1[256] = "/tmp/fdb-blk1";
+      if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
       {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to init OSD %d, %s\n", osdid, errStr);
-        return OSD_ERR_DEVICE_NOT_FOUND;
+        printf("failed to init bld device %d, %s\n", blkdevid, errStr);
+        return FDB_RESULT_OPEN_FAIL;
       }
     }
 
     //TODO remove dummy devname
-    fd = store_open(osdid, const_cast<char *>(pathname), 4096, flags, mode);
+    fd = store_open(blkdevid, const_cast<char *>(pathname), flags, mode);
 
     if (fd < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to open store %s %d, %s\n", pathname, fd, errStr);
-        if (fd == OSD_ERR_STORE_NOT_FOUND) {
+        if (fd == HCD_ERR_STORE_NOT_FOUND) {
             return (int) FDB_RESULT_NO_SUCH_FILE;
         } else {
             return (int) FDB_RESULT_OPEN_FAIL; // LCOV_EXCL_LINE
@@ -636,9 +643,14 @@ ssize_t _blkmgr_linux_pread(int fd, void *buf, size_t count, cs_off_t offset)
   return rv;
 }
 
-ssize_t _blkmgr_linux_getblksize(int fd)
+ssize_t _blkmgr_linux_getblk(int fd, uint64_t addr)
 {
-  return osd_getblksize(osdid);
+  return store_getblk(fd, addr);
+}
+
+int _blkmgr_linux_changemode(int fd, int flags)
+{
+  return store_mode_change(fd, flags);
 }
 
 int _blkmgr_linux_close(int fd)
@@ -657,7 +669,7 @@ int _blkmgr_linux_close(int fd)
 
 cs_off_t _blkmgr_linux_goto_eof(int fd)
 {
-    cs_off_t rv = 0;//lseek(fd, 0, SEEK_END);
+    cs_off_t rv = store_offset(fd);
     if (rv < 0) {
         return (cs_off_t) FDB_RESULT_SEEK_FAIL; // LCOV_EXCL_LINE
     }
@@ -667,16 +679,24 @@ cs_off_t _blkmgr_linux_goto_eof(int fd)
 // LCOV_EXCL_START
 cs_off_t _blkmgr_linux_file_size(const char *filename)
 {
+  return store_size(blkdevid, filename);
 
 }
 // LCOV_EXCL_STOP
 
 int _blkmgr_linux_fsync(int fd)
 {
-  int rv;
-  rv = store_sync(fd);
+  return FDB_RESULT_SUCCESS;
+}
+
+int _blkmgr_linux_fsync2(int fd, uint64_t addr)
+{
+  int rv = 0;
+  printf("sync done for addr %lu\n", addr);
+  rv = store_sync(fd, addr);
 
   if (rv < 0) {
+    printf("error in fynscblk for addr %lu addr error %d\n", addr, rv);
     return FDB_RESULT_FSYNC_FAIL; // LCOV_EXCL_LINE
   }
   return FDB_RESULT_SUCCESS;
@@ -685,12 +705,6 @@ int _blkmgr_linux_fsync(int fd)
 // LCOV_EXCL_START
 int _blkmgr_linux_fdatasync(int fd)
 {
-  int rv;
-  rv = store_sync(fd);
-
-  if (rv < 0) {
-    return FDB_RESULT_FSYNC_FAIL; // LCOV_EXCL_LINE
-  }
   return FDB_RESULT_SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -739,7 +753,7 @@ int _blkmgr_linux_get_fs_type(int src_fd)
 
 bool _blkmgr_linux_does_file_exist(const char *filename)
 {
-  return store_exist(osdid, filename);
+  return store_exist(blkdevid, filename);
 }
 
 int _blkmgr_linux_copy_file_range(int fs_type,
@@ -776,42 +790,34 @@ void _blkmgr_linux_get_dir_n_prefix(const char *filename, char *dirname, char *p
 
 fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, char *prefix)
 {
-    fdb_status fs = FDB_RESULT_SUCCESS;
-    char **store_names=(char **)malloc(32* sizeof(char *));
-    for(int i=0;i<32;i++){
-	store_names[i]=(char *)malloc(256 * sizeof(char));	
-    } 
-    int *store_remain;  // remaining stores number
-    int remaining=0;
-    store_remain=&remaining;	
-    int store_max=32;
-    int store_count=0; // Found stores number
-      
-    int rc = 0;
-    int fd;
-    if (osdid < 0)
-    {
-      char *osd_name = dirname;
-      char pri_dev1[256] = "/tmp/osd-pri1";
-      char pri_dev2[256] = "/tmp/osd-pri2";
-      char *pri_dev[2];
-      pri_dev[0] = pri_dev1;
-      pri_dev[1] = pri_dev2;
-      //TODO remove hard coding
-      if ((osdid = osd_init(osd_name, pri_dev, 2, NULL, 0, NULL, 0, OSD_ALL_FLASH)) < 0)
-      {
-        char errStr[256];
-        _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to init OSD %d, %s\n", osdid, errStr);
-       // Originally return OSD_ERR_DEVICE_NOT_FOUND; But it require to return fdb_status
-	return FDB_RESULT_OPEN_FAIL;
-      }
-    }
-    store_count = osd_storenames(osdid, store_names, store_max, store_remain);
+  fdb_status fs = FDB_RESULT_SUCCESS;
+  char **store_names=(char **)malloc(32* sizeof(char *));
+  for(int i=0;i<32;i++){
+    store_names[i]=(char *)malloc(256 * sizeof(char));	
+  } 
+  int *store_remain;  // remaining stores number
+  int remaining=0;
+  store_remain=&remaining;	
+  int store_max=32;
+  int store_count=0; // Found stores number
 
-    if (store_count < 0) {
-        char errStr[256];
-        _blkmgr_linux_get_errno_str(errStr, 256);
+  if (blkdevid < 0)
+  {
+    char pri_dev[256] = "/tmp/fdb-blk1";
+    //TODO remove hard coding
+    if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
+    {
+      char errStr[256];
+      _blkmgr_linux_get_errno_str(errStr, 256);
+      printf("failed to init blk dev %d, %s\n", blkdevid, errStr);
+      return FDB_RESULT_OPEN_FAIL;
+    }
+  }
+  store_count = blkdev_storenames(blkdevid, store_names, store_max, store_remain);
+
+  if (store_count < 0) {
+    char errStr[256];
+    _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to get storename of %s %s\n", filename, errStr);
     }
     else if (store_count == 0) {
@@ -829,7 +835,7 @@ fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, c
     for(int i=0;i<store_count;i++){
 	    if (!strncmp(store_names[i], prefix, strlen(prefix))) {
 		// Need to check filemgr for possible open entry?
-		if (store_remove(osdid, store_names[i])) {
+		if (store_remove(blkdevid, store_names[i])) {
 		    fs = FDB_RESULT_FILE_REMOVE_FAIL;
 		    return fs;
 		}
@@ -841,7 +847,6 @@ fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, c
 }
 void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no)
 {
-    fdb_status fs = FDB_RESULT_SUCCESS;
     char **store_names=(char **)malloc(32* sizeof(char *));
     for(int i=0;i<32;i++){
 	store_names[i]=(char *)malloc(256 * sizeof(char));	
@@ -852,27 +857,18 @@ void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, cha
     int store_max=32;
     int store_count=0; // Found stores number
       
-    int rc = 0;
-    int fd;
-    if (osdid < 0)
+    if (blkdevid < 0)
     {
-      char *osd_name = dirname;
-      char pri_dev1[256] = "/tmp/osd-pri1";
-      char pri_dev2[256] = "/tmp/osd-pri2";
-      char *pri_dev[2];
-      pri_dev[0] = pri_dev1;
-      pri_dev[1] = pri_dev2;
-      //TODO remove hard coding
-      if ((osdid = osd_init(osd_name, pri_dev, 2, NULL, 0, NULL, 0, OSD_ALL_FLASH)) < 0)
+      char pri_dev[256] = "/tmp/fdb-blk1";
+      if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
       {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to init OSD %d, %s\n", osdid, errStr);
-       // Originally return OSD_ERR_DEVICE_NOT_FOUND; But it require to return fdb_status
-	return;
+        printf("failed to init block device %d, %s\n", blkdevid, errStr);
+        return;
       }
     }
-    store_count = osd_storenames(osdid, store_names, store_max, store_remain);
+    store_count = blkdev_storenames(blkdevid, store_names, store_max, store_remain);
     if (store_count < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
@@ -908,12 +904,14 @@ struct filemgr_ops linux_blk_ops = {
     _blkmgr_linux_open,
     _blkmgr_linux_pwrite,
     _blkmgr_linux_pread,
-    _blkmgr_linux_getblksize,
+    _blkmgr_linux_getblk,
+    _blkmgr_linux_changemode,
     _blkmgr_linux_close,
     _blkmgr_linux_goto_eof,
     _blkmgr_linux_file_size,
     _blkmgr_linux_fdatasync,
     _blkmgr_linux_fsync,
+    _blkmgr_linux_fsync2,
     _blkmgr_linux_get_errno_str,
     // Async I/O operations
     _blkmgr_aio_init,
@@ -932,7 +930,7 @@ struct filemgr_ops linux_blk_ops = {
 struct filemgr_ops * get_linux_filemgr_ops()
 {
   struct filemgr_config *fconfig = filemgr_get_config();
-  if (fconfig->use_blkdevice)
+  if (fconfig->rawblksize)
   {
     return &linux_blk_ops;
   }

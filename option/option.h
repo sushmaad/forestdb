@@ -56,6 +56,7 @@
 //#define __DEBUG_COUCHBENCH
 
 #define FDB_BLOCKSIZE (4096)
+#define FDB_RAWBLKSIZE (1 << 21)
 #define FDB_WAL_NBUCKET (4099) // a prime number
 #define FDB_MAX_FILENAME_LEN (1024)
 #define FDB_MAX_KVINS_NAME_LEN (65536)

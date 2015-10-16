@@ -156,7 +156,7 @@ static void *_writer_thread(void *voidargs)
         gen_key_back(j, bigKeyBuf);
         status = fdb_set(db, doc);
         TEST_CHK(status == FDB_RESULT_SUCCESS);
-
+#if 0
         // Commit based on batch-size set..
         if (j && j % args->batch_size == 0) {
             status = fdb_commit(dbfile, args->commit_opt);
@@ -177,6 +177,7 @@ static void *_writer_thread(void *voidargs)
             fdb_doc_free(rdoc);
             rdoc = NULL;
         }
+#endif
     }
 
     doc->key = NULL;
@@ -192,7 +193,7 @@ void multi_file_write_with_inmem_snap(const char *test_name) {
     TEST_INIT();
     memleak_start();
 
-    int num_writers = 4;
+    int num_writers = 1;
     int num_inmem_snaps = 4;
     int inmem_snap_freq = 10;
     int num_docs = NUM_FRUITS*1000;

@@ -611,10 +611,15 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     int fd = -1;
     fdb_status status;
     filemgr_open_result result = {NULL, FDB_RESULT_OPEN_FAIL};
-
+  
+    filemgr_init(config);
     // check whether file is already opened or not
     query.filename = filename;
     spin_lock(&filemgr_openlock);
+    if (!ops)
+    {
+      ops = get_filemgr_ops();
+    }
     e = hash_find(&hash, &query.e);
 
     if (e) {
@@ -631,6 +636,7 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
             }
             *file->config = *config;
             file->config->blocksize = global_config.blocksize;
+            file->config->rawblksize = global_config.rawblksize;
             file->config->ncacheblock = global_config.ncacheblock;
             file_flag |= config->flag;
             file->fd = file->ops->open(file->filename, file_flag, 0666);
@@ -714,14 +720,18 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
 
     file->ops = ops;
     file->blocksize = global_config.blocksize;
+    file->rawblksize = global_config.rawblksize;
     atomic_init_uint8_t(&file->status, FILE_NORMAL);
     file->config = (struct filemgr_config*)malloc(sizeof(struct filemgr_config));
     *file->config = *config;
     file->config->blocksize = global_config.blocksize;
+    file->config->rawblksize = global_config.rawblksize;
     file->config->ncacheblock = global_config.ncacheblock;
     file->new_file = NULL;
     file->old_filename = NULL;
     file->fd = fd;
+    //just initializing to negative block size
+    file->prevsyncrawblk = -1 * (int32_t)(file->rawblksize);
 
     cs_off_t offset = file->ops->goto_eof(file->fd);
     if (offset == FDB_RESULT_SEEK_FAIL) {
@@ -835,6 +845,11 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     result.file = file;
     result.rv = FDB_RESULT_SUCCESS;
     return result;
+}
+
+int filemgr_change_mode(struct filemgr *file, int flags)
+{
+  return file->ops->changemode(file->fd, flags);
 }
 
 uint64_t filemgr_update_header(struct filemgr *file, void *buf, size_t len)
@@ -1452,31 +1467,60 @@ fdb_status filemgr_shutdown()
 
 bid_t filemgr_alloc(struct filemgr *file, err_log_callback *log_callback)
 {
-    spin_lock(&file->lock);
-    bid_t bid = atomic_get_uint64_t(&file->pos) / file->blocksize;
-    atomic_add_uint64_t(&file->pos, file->blocksize);
+  spin_lock(&file->lock);
+  bid_t bid = atomic_get_uint64_t(&file->pos) / file->blocksize;
 
-    if (global_config.ncacheblock <= 0) {
-        // if block cache is turned off, write the allocated block before use
-        uint8_t _buf = 0x0;
-        ssize_t rv = file->ops->pwrite(file->fd, &_buf, 1,
-                                       atomic_get_uint64_t(&file->pos) - 1);
-        _log_errno_str(file->ops, log_callback, (fdb_status) rv, "WRITE", file->filename);
-    }
-    spin_unlock(&file->lock);
+  //fetch blk before writing to it
+  if(file->rawblksize && !(atomic_get_uint64_t(&file->pos) % file->rawblksize)) {
+    file->ops->getblk(file->fd, atomic_get_uint64_t(&file->pos));
+  }
+  
+  atomic_add_uint64_t(&file->pos, file->blocksize);
 
-    return bid;
+
+  if (global_config.ncacheblock <= 0 && !file->rawblksize) {
+    // if block cache is turned off, write the allocated block before use
+    uint8_t _buf = 0x0;
+    ssize_t rv = file->ops->pwrite(file->fd, &_buf, 1,
+        atomic_get_uint64_t(&file->pos) - 1);
+    _log_errno_str(file->ops, log_callback, (fdb_status) rv, "WRITE",
+        file->filename);
+  }
+  spin_unlock(&file->lock);
+  return bid;
 }
 
 void filemgr_alloc_multiple(struct filemgr *file, int nblock, bid_t *begin,
                             bid_t *end, err_log_callback *log_callback)
 {
-    spin_lock(&file->lock);
-    *begin = atomic_get_uint64_t(&file->pos) / file->blocksize;
-    *end = *begin + nblock - 1;
-    atomic_add_uint64_t(&file->pos, file->blocksize * nblock);
+  spin_lock(&file->lock);
+  *begin = atomic_get_uint64_t(&file->pos) / file->blocksize;
+  *end = *begin + nblock - 1;
 
-    if (global_config.ncacheblock <= 0) {
+  if (file->rawblksize){
+    int64_t begaddr = *begin * file->blocksize;
+    int64_t endaddr = *end * file->blocksize;
+    int64_t remainderbegin = begaddr % file->rawblksize;
+    int64_t remainderend = endaddr % file->rawblksize;
+    int64_t roundupbegin = (remainderbegin) ? begaddr + file->rawblksize -
+      remainderbegin : begaddr;
+    int64_t roundupend = remainderend ? endaddr + file->rawblksize -
+      remainderend : endaddr;
+    //if the allocation spans across multiple blocks fetch the
+    //block before flushing
+    if ((roundupbegin == roundupend) && !remainderend && !remainderbegin) {
+      file->ops->getblk(file->fd, begaddr);
+    }
+    else {
+      for (int i = 0; i < ((roundupend - roundupbegin) /
+            file->rawblksize); i++) {
+      file->ops->getblk(file->fd, roundupbegin + (i * file->rawblksize));
+      }
+    }
+  }
+
+  atomic_add_uint64_t(&file->pos, file->blocksize * nblock);
+  if (global_config.ncacheblock <= 0 && !file->rawblksize) {
         // if block cache is turned off, write the allocated block before use
         uint8_t _buf = 0x0;
         ssize_t rv = file->ops->pwrite(file->fd, &_buf, 1,
@@ -1491,27 +1535,48 @@ bid_t filemgr_alloc_multiple_cond(struct filemgr *file, bid_t nextbid, int nbloc
                                   bid_t *begin, bid_t *end,
                                   err_log_callback *log_callback)
 {
-    bid_t bid;
-    spin_lock(&file->lock);
-    bid = atomic_get_uint64_t(&file->pos) / file->blocksize;
-    if (bid == nextbid) {
-        *begin = atomic_get_uint64_t(&file->pos) / file->blocksize;
-        *end = *begin + nblock - 1;
-        atomic_add_uint64_t(&file->pos, file->blocksize * nblock);
-
-        if (global_config.ncacheblock <= 0) {
-            // if block cache is turned off, write the allocated block before use
-            uint8_t _buf = 0x0;
-            ssize_t rv = file->ops->pwrite(file->fd, &_buf, 1,
-                                           atomic_get_uint64_t(&file->pos));
-            _log_errno_str(file->ops, log_callback, (fdb_status) rv, "WRITE", file->filename);
+  bid_t bid;
+  spin_lock(&file->lock);
+  bid = atomic_get_uint64_t(&file->pos) / file->blocksize;
+  if (bid == nextbid) {
+    *begin = atomic_get_uint64_t(&file->pos) / file->blocksize;
+    *end = *begin + nblock - 1;
+    if (file->rawblksize){
+      int64_t begaddr = *begin * file->blocksize;
+      int64_t endaddr = *end * file->blocksize;
+      int64_t remainderbegin = begaddr % file->rawblksize;
+      int64_t remainderend = endaddr % file->rawblksize;
+      int64_t roundupbegin = (remainderbegin) ? begaddr + file->rawblksize -
+        remainderbegin : begaddr;
+      int64_t roundupend = remainderend ? endaddr + file->rawblksize -
+        remainderend : endaddr;
+      //if the allocation spans across multiple blocks fetch the
+      //block before flushing
+      if ((roundupbegin == roundupend) && !remainderend && !remainderbegin) {
+        file->ops->getblk(file->fd, begaddr);
+      }
+      else {
+        for (int i = 0; i < ((roundupend - roundupbegin) /
+              file->rawblksize); i++) {
+          file->ops->getblk(file->fd, roundupbegin + (i * file->rawblksize));
         }
-    }else{
-        *begin = BLK_NOT_FOUND;
-        *end = BLK_NOT_FOUND;
+      }
     }
-    spin_unlock(&file->lock);
-    return bid;
+    atomic_add_uint64_t(&file->pos, file->blocksize * nblock);
+
+    if (global_config.ncacheblock <= 0 && !file->rawblksize) {
+      // if block cache is turned off, write the allocated block before use
+      uint8_t _buf = 0x0;
+      ssize_t rv = file->ops->pwrite(file->fd, &_buf, 1,
+          atomic_get_uint64_t(&file->pos));
+      _log_errno_str(file->ops, log_callback, (fdb_status) rv, "WRITE", file->filename);
+    }
+  }else{
+    *begin = BLK_NOT_FOUND;
+    *end = BLK_NOT_FOUND;
+  }
+  spin_unlock(&file->lock);
+  return bid;
 }
 
 #ifdef __CRC32
@@ -1730,9 +1795,9 @@ fdb_status filemgr_write_offset(struct filemgr *file, bid_t bid,
             if (r == 0) {
                 // cache miss
                 // write partially .. we have to read previous contents of the block
-                uint64_t cur_file_pos = file->ops->goto_eof(file->fd);
-                bid_t cur_file_last_bid = cur_file_pos / file->blocksize;
-                void *_buf = _filemgr_get_temp_buf();
+              uint64_t cur_file_pos = file->ops->goto_eof(file->fd);
+              bid_t cur_file_last_bid = cur_file_pos / file->blocksize;
+              void *_buf = _filemgr_get_temp_buf();
 
                 if (bid >= cur_file_last_bid) {
                     // this is the first time to write this block
@@ -1911,7 +1976,10 @@ fdb_status filemgr_commit(struct filemgr *file,
         memset(marker, BLK_MARKER_DBHEADER, BLK_MARKER_SIZE);
         memcpy((uint8_t *)buf + file->blocksize - BLK_MARKER_SIZE,
                marker, BLK_MARKER_SIZE);
-
+        if (file->rawblksize)
+        {
+          file->ops->getblk(file->fd, atomic_get_uint64_t(&file->pos));
+        }
         ssize_t rv = file->ops->pwrite(file->fd, buf, file->blocksize,
                                        atomic_get_uint64_t(&file->pos));
         _log_errno_str(file->ops, log_callback, (fdb_status) rv,
@@ -1936,7 +2004,7 @@ fdb_status filemgr_commit(struct filemgr *file,
 
     spin_unlock(&file->lock);
 
-    if (file->fflags & FILEMGR_SYNC) {
+    if ((file->fflags & FILEMGR_SYNC) && !file->rawblksize) {
         result = file->ops->fsync(file->fd);
         _log_errno_str(file->ops, log_callback, (fdb_status)result, "FSYNC", file->filename);
     }
@@ -1945,22 +2013,43 @@ fdb_status filemgr_commit(struct filemgr *file,
 
 fdb_status filemgr_sync(struct filemgr *file, err_log_callback *log_callback)
 {
-    fdb_status result = FDB_RESULT_SUCCESS;
-    if (global_config.ncacheblock > 0) {
-        result = bcache_flush(file);
-        if (result != FDB_RESULT_SUCCESS) {
-            _log_errno_str(file->ops, log_callback, (fdb_status) result,
-                           "FLUSH", file->filename);
-            return result;
-        }
+  fdb_status result = FDB_RESULT_SUCCESS;
+  if (global_config.ncacheblock > 0) {
+    result = bcache_flush(file);
+    if (result != FDB_RESULT_SUCCESS) {
+      _log_errno_str(file->ops, log_callback, (fdb_status) result,
+          "FLUSH", file->filename);
+      return result;
     }
+  }
+  if (file->fflags & FILEMGR_SYNC) {
+    int rv = 0;
+    if (!file->rawblksize) {
+      rv = file->ops->fsync(file->fd);
+    } else {
+      bool sync = false;
+      int64_t syncbeginblk = file->prevsyncrawblk + file->rawblksize;
+      int64_t syncendblk = (atomic_get_uint64_t(&file->pos) -
+          (atomic_get_uint64_t(&file->pos) %
+           file->rawblksize)) - 2 * file->rawblksize;
+      
+      while(syncbeginblk < syncendblk){
+        printf("synching blk %lu\n", syncbeginblk);
+        rv = file->ops->fsyncblk(file->fd, syncbeginblk);
+        syncbeginblk += file->rawblksize;
+        sync = true;
+      }
+      if (sync) {
+        printf("last commit %lu\n", syncendblk);
+        file->prevsyncrawblk = syncendblk - file->rawblksize;
+        atomic_store_uint64_t(&file->last_commit, syncendblk);
+      }
+    }
+    _log_errno_str(file->ops, log_callback, (fdb_status)rv, "FSYNC", file->filename);
+    return (fdb_status) rv;
+  }
 
-    if (file->fflags & FILEMGR_SYNC) {
-        int rv = file->ops->fsync(file->fd);
-        _log_errno_str(file->ops, log_callback, (fdb_status)rv, "FSYNC", file->filename);
-        return (fdb_status) rv;
-    }
-    return result;
+  return result;
 }
 
 fdb_status filemgr_copy_file_range(struct filemgr *src_file,
@@ -2183,6 +2272,7 @@ fdb_status filemgr_destroy_file(char *filename,
         file->ops = get_filemgr_ops();
         file->fd = file->ops->open(file->filename, O_RDWR, 0666);
         file->blocksize = global_config.blocksize;
+        file->rawblksize = global_config.rawblksize;
         file->config = NULL;
         if (file->fd < 0) {
             if (file->fd != FDB_RESULT_NO_SUCH_FILE) {

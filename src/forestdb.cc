@@ -1187,6 +1187,7 @@ static void _fdb_init_file_config(const fdb_config *config,
     struct filemgr_config *fconfig) {
   fconfig->blocksize = config->blocksize;
   fconfig->rawblksize = config->rawblksize;
+  memcpy(fconfig->rawdevice, config->rawdevice, strlen(config->rawdevice) + 1);
   fconfig->ncacheblock = config->buffercache_size / config->blocksize;
   fconfig->chunksize = config->chunksize;
 

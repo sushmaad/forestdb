@@ -40,6 +40,8 @@ struct anomalous_callbacks {
     int (*changemode_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd,
         int flags);
     int (*close_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
+    int (*remove_cb)(void *ctx, struct filemgr_ops *normal_ops,
+        const char *filename);
     cs_off_t (*goto_eof_cb)(void *ctx, struct filemgr_ops *normal_ops, int fd);
     cs_off_t (*file_size_cb)(void *ctx, struct filemgr_ops *normal_ops,
                              const char *filename);

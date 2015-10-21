@@ -107,6 +107,12 @@ int _filemgr_win_changemode(int fd, int flags)
 {
   return 0;
 }
+
+int _filemgr_win_remove(const char *filename)
+{
+  return 0;
+}
+
 int _filemgr_win_close(int fd)
 {
 #ifdef _MSC_VER
@@ -339,6 +345,7 @@ struct filemgr_ ps win_ops = {
     _filemgr_win_getblk,
     _filemgr_win_changemode,
     _filemgr_win_close,
+    _filemgr_win_remove,
     _filemgr_win_goto_eof,
     _filemgr_win_file_size,
     _filemgr_win_fdatasync,

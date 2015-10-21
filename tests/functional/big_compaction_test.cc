@@ -137,9 +137,6 @@ void multi_writers(const char *test_name) {
     void **thread_ret = alca(void *, num_writers);
     struct timeval ts_begin, ts_cur, ts_gap;
 
-    // remove previous test files
-    r = system(SHELL_DEL TEST_FILENAME "* > errorlog.txt");
-    (void) r;
 
     printf("\nLoading %d docs %d key length %d bodylen."
            " Buffercache %" _F64 "MB. Target docsize %" _F64 "MB...",
@@ -152,6 +149,17 @@ void multi_writers(const char *test_name) {
     fconfig.multi_kv_instances = MULTI_KV;
     fconfig.buffercache_size = BUFFERCACHE_SIZE;
     fconfig.durability_opt = FDB_DRB_ODIRECT;
+    
+    // remove previous test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+      sprintf(cmd, SHELL_DEL TEST_FILENAME "* > errorlog.txt");
+    }    
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, TEST_FILENAME, &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
 

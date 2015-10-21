@@ -206,8 +206,14 @@ void multi_file_write_with_inmem_snap(const char *test_name) {
     void **thread_ret = alca(void *, num_writers);
 
     // remove previous test files
-    r = system(SHELL_DEL TEST_FILENAME "* > errorlog.txt");
-    (void) r;
+    char cmd[256];
+    if (fdb_get_default_config().rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fdb_get_default_config().rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL TEST_FILENAME "* > errorlog.txt");
+    }    
+    r = system(cmd);
+    (void)r;
 
     for (int i = num_writers - 1; i >= 0; --i) {
         // Writer Thread Config:

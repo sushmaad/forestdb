@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <uftl/hcd.h>
 #if !defined(WIN32) && !defined(_WIN32)
 #include <unistd.h>
 #endif
@@ -45,7 +46,13 @@ void rollback_secondary_kvs()
     fdb_file_handle *dbfile;
     fdb_kvs_handle *kv1, *kv2;
 
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
@@ -103,9 +110,6 @@ void multi_version_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove all previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -113,6 +117,15 @@ void multi_version_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove all previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
@@ -241,16 +254,21 @@ void crash_recovery_test(bool walflush)
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // reopen db
     fdb_open(&dbfile, test_file, &fconfig);
@@ -381,10 +399,6 @@ void snapshot_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -393,7 +407,12 @@ void snapshot_test()
     fconfig.compaction_threshold = 0;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -664,9 +683,6 @@ void snapshot_stats_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -674,9 +690,14 @@ void snapshot_stats_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-
+    
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -755,7 +776,6 @@ void snapshot_with_uncomitted_data_test()
 
     int n = 10, value_len=32;
     int i, r, idx;
-    char cmd[256];
     char key[256], *value;
     char keystr[] = "key%06d";
     char valuestr[] = "value%d";
@@ -767,10 +787,6 @@ void snapshot_with_uncomitted_data_test()
     fdb_seqnum_t seqnum;
     fdb_status s; (void)s;
 
-    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
-    r = system(cmd);
-    (void)r;
-
     memleak_start();
 
     value = (char*)malloc(value_len);
@@ -781,6 +797,15 @@ void snapshot_with_uncomitted_data_test()
     config.wal_flush_before_commit = true;
     config.multi_kv_instances = true;
     config.buffercache_size = 0*1024*1024;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     kvs_config = fdb_get_default_kvs_config();
 
@@ -917,10 +942,6 @@ void in_memory_snapshot_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -929,7 +950,12 @@ void in_memory_snapshot_test()
     fconfig.compaction_threshold = 0;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -1100,7 +1126,6 @@ void in_memory_snapshot_on_dirty_hbtrie_test()
 
     int n = 300, value_len=32;
     int i, r, idx, c;
-    char cmd[256];
     char key[256], *value;
     char keystr[] = "k%05d";
     char keystr2[] = "k%06d";
@@ -1113,10 +1138,6 @@ void in_memory_snapshot_on_dirty_hbtrie_test()
     fdb_iterator *fit, *fit_normal, *fit_clone;
     fdb_doc *doc;
 
-    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
-    r = system(cmd);
-    (void)r;
-
     memleak_start();
 
     value = (char*)malloc(value_len);
@@ -1128,6 +1149,15 @@ void in_memory_snapshot_on_dirty_hbtrie_test()
     config.wal_threshold = n/5;
     config.multi_kv_instances = true;
     config.buffercache_size = 0;
+
+    //remove previous mvcc files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     kvs_config = fdb_get_default_kvs_config();
 
@@ -1456,7 +1486,6 @@ void in_memory_snapshot_compaction_test()
 
     int n = 10, value_len=32;
     int i, r, c, idx;
-    char cmd[256];
     char key[256], *value;
     char keystr[] = "k%05d";
     char valuestr[] = "value%08d";
@@ -1472,10 +1501,6 @@ void in_memory_snapshot_compaction_test()
     fdb_status s;
     struct cb_inmem_snap_args cargs;
 
-    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
-    r = system(cmd);
-    (void)r;
-
     memleak_start();
 
     value = (char*)malloc(value_len);
@@ -1490,6 +1515,15 @@ void in_memory_snapshot_compaction_test()
     config.compaction_cb = cb_inmem_snap;
     config.compaction_cb_mask = FDB_CS_MOVE_DOC;
     config.compaction_cb_ctx = &cargs;
+    
+    //remove previous mvcc files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     kvs_config = fdb_get_default_kvs_config();
 
@@ -1606,9 +1640,6 @@ void snapshot_clone_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -1618,7 +1649,12 @@ void snapshot_clone_test()
     fconfig.compaction_threshold = 0;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -1913,10 +1949,6 @@ void snapshot_parallel_clone_test()
 
     char keybuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -1925,7 +1957,12 @@ void snapshot_parallel_clone_test()
     fconfig.compaction_threshold = 0;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -2020,7 +2057,12 @@ void snapshot_markers_in_file_test(bool multi_kv)
     fconfig.multi_kv_instances = multi_kv;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -2165,12 +2207,19 @@ void rollback_forward_seqnum()
     fdb_doc **doc = alca(fdb_doc*, n);
     fdb_doc *rdoc = NULL;
     fdb_status status;
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
 
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    
+    //remove previous mvcc files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
     fdb_kvs_open(dbfile, &kv1, "kv1", &kvs_config);
@@ -2264,10 +2313,6 @@ void rollback_test(bool multi_kv)
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2277,7 +2322,12 @@ void rollback_test(bool multi_kv)
     fconfig.multi_kv_instances = multi_kv;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -2442,12 +2492,17 @@ void rollback_and_snapshot_test()
     fdb_kvs_handle *db,  *snapshot;
     int r;
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     // MB-12530 open db
     config = fdb_get_default_config();
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     kvs_config = fdb_get_default_kvs_config();
     status = fdb_open(&dbfile, "mvcc_test", &config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -2537,12 +2592,18 @@ void rollback_ncommits()
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fdb_status status;
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
 
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    //remove previous mvcc files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
     fdb_kvs_open(dbfile, &kv1, "kv1", &kvs_config);
@@ -2603,10 +2664,6 @@ void transaction_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2614,6 +2671,15 @@ void transaction_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "mvcc_test1", &fconfig);
@@ -2935,10 +3001,6 @@ void transaction_simple_api_test()
 
     char keybuf[256], bodybuf[256];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2946,6 +3008,15 @@ void transaction_simple_api_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
@@ -3079,12 +3150,18 @@ void rollback_prior_to_ops(bool walflush)
     fdb_doc *rdoc = NULL, *vdoc;
     fdb_status status;
 
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 10;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
     fdb_kvs_open(dbfile, &kv1, "kv1", &kvs_config);
@@ -3319,7 +3396,12 @@ void snapshot_concurrent_compaction_test()
                                  FDB_CS_END;
 
     // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -3373,10 +3455,6 @@ void rollback_to_zero_test(bool multi_kv)
     char keybuf[256], metabuf[256], bodybuf[256];
     char kv_name[8];
 
-    // remove previous mvcc_test files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -3384,6 +3462,15 @@ void rollback_to_zero_test(bool multi_kv)
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
     fconfig.multi_kv_instances = multi_kv;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./mvcc_test1", &fconfig);
@@ -3535,10 +3622,6 @@ void rollback_all_test(bool multi_kv)
     char keybuf[256], metabuf[256], bodybuf[256];
     char kv_name[8];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -3546,6 +3629,15 @@ void rollback_all_test(bool multi_kv)
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
     fconfig.multi_kv_instances = multi_kv;
+    
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     fdb_open(&dbfile, "./mvcc_test6", &fconfig);
     if (multi_kv) {
@@ -3722,13 +3814,20 @@ void auto_compaction_snapshots_test()
 
     int i, r;
 
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
-    (void)r;
-
     // Open Database File
     config = fdb_get_default_config();
     config.compaction_mode=FDB_COMPACTION_AUTO;
     config.compactor_sleep_duration=1;
+    
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+    
     status = fdb_open(&file, "mvcc_test1", &config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
 
@@ -3818,11 +3917,17 @@ void *rollback_during_ops_test(void * args)
     if (args == NULL)
     { // parent
 
-        r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+        config = fdb_get_default_config();
+        // remove previous mvcc_test files
+        char cmd[256];
+        if (config.rawblksize){
+          blkdev_remove(config.rawdevice);
+        }
+        sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+        r = system(cmd);
         (void)r;
 
         // Open Database File
-        config = fdb_get_default_config();
         status = fdb_open(&file, "mvcc_test1", &config);
         TEST_CHK(status == FDB_RESULT_SUCCESS);
 
@@ -3945,10 +4050,16 @@ void in_memory_snapshot_rollback_test()
     fdb_kvs_info kvs_info;
     fdb_seqnum_t c, rollback_to = 3;
 
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    config = fdb_get_default_config();
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
-    config = fdb_get_default_config();
     status = fdb_open(&file, "mvcc_test1", &config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     kvs_config = fdb_get_default_kvs_config();
@@ -4022,15 +4133,20 @@ void rollback_drop_multi_files_kvs_test()
     fdb_doc *rdoc;
     fdb_status status;
 
-    // remove previous dummy test files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.compaction_mode = FDB_COMPACTION_MANUAL;
     fconfig.durability_opt = FDB_DRB_ASYNC;
+    
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+      blkdev_remove(fconfig.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // 1024 kvs via 128 per dbfile
     for(j=0;j<n_files;++j){
@@ -4182,10 +4298,16 @@ void tx_crash_recover_test()
     const char *test_file_c = "./mvcc_test3";
     char bodybuf[256];
 
-    r = system(SHELL_DEL" mvcc_test* > errorlog.txt");
+    config = fdb_get_default_config();
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (config.rawblksize){
+      blkdev_remove(config.rawdevice);
+    }
+    sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
-    config = fdb_get_default_config();
     status = fdb_open(&file, test_file, &config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     kvs_config = fdb_get_default_kvs_config();
@@ -4284,8 +4406,8 @@ void tx_crash_recover_test()
 
 int main(){
 
-    rollback_secondary_kvs();
-    multi_version_test();
+    //rollback_secondary_kvs();
+    //multi_version_test();
 #ifdef __CRC32
     crash_recovery_test(true);
     crash_recovery_test(false);

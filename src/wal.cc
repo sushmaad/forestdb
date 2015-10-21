@@ -781,6 +781,7 @@ static fdb_status _wal_flush(struct filemgr *file,
     
     if (file->rawblksize) {
     //before doing wal_flush sync the raw block device
+    printf("synching to file in wal flush\n");
      filemgr_sync(file, &handle->log_callback);
     }
     // sort by old byte-offset of the document (for sequential access)

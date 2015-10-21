@@ -91,6 +91,11 @@ int _filemgr_linux_changemode(int fd, int flags)
   return 0;
 }
 
+int _filemgr_linux_remove(const char *filename)
+{
+  return 0;
+}
+
 int _filemgr_linux_close(int fd)
 {
     int rv = 0;
@@ -549,6 +554,7 @@ struct filemgr_ops linux_file_ops = {
     _filemgr_linux_getblk,
     _filemgr_linux_changemode,
     _filemgr_linux_close,
+    _filemgr_linux_remove,
     _filemgr_linux_goto_eof,
     _filemgr_linux_file_size,
     _filemgr_linux_fdatasync,
@@ -589,7 +595,7 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
     int fd;
     if (blkdevid < 0)
     {
-      char pri_dev1[256] = "/tmp/fdb-blk1";
+      char *pri_dev1 = filemgr_get_config()->rawdevice;
       if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
       {
         char errStr[256];
@@ -601,6 +607,7 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 
     //TODO remove dummy devname
     fd = store_open(blkdevid, const_cast<char *>(pathname), flags, mode);
+    printf("opening store %s\n", pathname);
 
     if (fd < 0) {
         char errStr[256];
@@ -803,7 +810,7 @@ fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, c
 
   if (blkdevid < 0)
   {
-    char pri_dev[256] = "/tmp/fdb-blk1";
+    char *pri_dev = filemgr_get_config()->rawdevice;
     //TODO remove hard coding
     if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
     {
@@ -845,6 +852,27 @@ fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, c
     free(store_names);
     return fs;
 }
+
+int _blkmgr_linux_remove(const char *filename)
+{
+  size_t rc = store_remove(blkdevid, filename);
+  fdb_status fs = FDB_RESULT_SUCCESS;
+  if (rc < 0) {
+    switch (rc){
+      case HCD_ERR_INVALID_INPUT:
+        fs = FDB_RESULT_INVALID_ARGS;
+        break;
+      case HCD_ERR_STORE_NOT_FOUND:
+        fs =  FDB_RESULT_NO_SUCH_FILE;
+        break;
+      default:
+        fs =  FDB_RESULT_FILE_REMOVE_FAIL;
+        break;
+    }
+  }
+  return (int)fs;
+}
+
 void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no)
 {
     char **store_names=(char **)malloc(32* sizeof(char *));
@@ -859,7 +887,7 @@ void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, cha
       
     if (blkdevid < 0)
     {
-      char pri_dev[256] = "/tmp/fdb-blk1";
+      char *pri_dev = filemgr_get_config()->rawdevice; 
       if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
       {
         char errStr[256];
@@ -907,6 +935,7 @@ struct filemgr_ops linux_blk_ops = {
     _blkmgr_linux_getblk,
     _blkmgr_linux_changemode,
     _blkmgr_linux_close,
+    _blkmgr_linux_remove,
     _blkmgr_linux_goto_eof,
     _blkmgr_linux_file_size,
     _blkmgr_linux_fdatasync,

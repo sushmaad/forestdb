@@ -636,7 +636,8 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
             }
             *file->config = *config;
             file->config->blocksize = global_config.blocksize;
-            file->config->rawblksize = global_config.rawblksize;
+            memcpy(file->config->rawdevice, global_config.rawdevice,
+                strlen(global_config.rawdevice) + 1);
             file->config->ncacheblock = global_config.ncacheblock;
             file_flag |= config->flag;
             file->fd = file->ops->open(file->filename, file_flag, 0666);
@@ -721,11 +722,15 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     file->ops = ops;
     file->blocksize = global_config.blocksize;
     file->rawblksize = global_config.rawblksize;
+    memcpy(file->rawdevice, global_config.rawdevice,
+            strlen(global_config.rawdevice) + 1);
     atomic_init_uint8_t(&file->status, FILE_NORMAL);
     file->config = (struct filemgr_config*)malloc(sizeof(struct filemgr_config));
     *file->config = *config;
     file->config->blocksize = global_config.blocksize;
     file->config->rawblksize = global_config.rawblksize;
+    memcpy(file->config->rawdevice, global_config.rawdevice,
+            strlen(global_config.rawdevice) + 1);
     file->config->ncacheblock = global_config.ncacheblock;
     file->new_file = NULL;
     file->old_filename = NULL;
@@ -2319,8 +2324,10 @@ fdb_status filemgr_destroy_file(char *filename,
                 if (status == FDB_RESULT_SUCCESS) {
                     if (filemgr_does_file_exist(filename)
                                                == FDB_RESULT_SUCCESS) {
-                        if (remove(filename)) {
+                        if (!file->rawblksize && remove(filename)) {
                             status = FDB_RESULT_FILE_REMOVE_FAIL;
+                        } else {
+                          return (fdb_status)file->ops->remove(filename);
                         }
                     }
                 }

@@ -100,6 +100,12 @@ int _close_cb(void *ctx, struct filemgr_ops *normal_ops,
     return normal_ops->close(fd);
 }
 
+int _remove_cb(void *ctx, struct filemgr_ops *normal_ops,
+              const char *filename)
+{
+    return normal_ops->remove(filename);
+}
+
 cs_off_t _goto_eof_cb(void *ctx, struct filemgr_ops *normal_ops,
                       int fd)
 {
@@ -193,6 +199,7 @@ struct anomalous_callbacks default_callbacks = {
     _getblk_cb,
     _changemode_cb,
     _close_cb,
+    _remove_cb,
     _goto_eof_cb,
     _file_size_cb,
     _fdatasync_cb,
@@ -258,6 +265,11 @@ int _filemgr_anomalous_changemode(int fd, int flags)
 int _filemgr_anomalous_close(int fd)
 {
     return anon_cbs->close_cb(anon_ctx, normal_filemgr_ops, fd);
+}
+
+int _filemgr_anomalous_remove(const char *filename)
+{
+    return anon_cbs->remove_cb(anon_ctx, normal_filemgr_ops, filename);
 }
 
 cs_off_t _filemgr_anomalous_goto_eof(int fd)
@@ -344,6 +356,7 @@ struct filemgr_ops anomalous_ops = {
     _filemgr_anomalous_getblk,
     _filemgr_anomalous_changemode,
     _filemgr_anomalous_close,
+    _filemgr_anomalous_remove,
     _filemgr_anomalous_goto_eof,
     _filemgr_anomalous_file_size,
     _filemgr_anomalous_fdatasync,

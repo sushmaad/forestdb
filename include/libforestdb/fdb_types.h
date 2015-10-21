@@ -330,6 +330,7 @@ typedef struct {
       *instead of file system
       */
     uint32_t rawblksize;
+    const char *rawdevice;
     /**
      * Flags for fdb_open API. It can be used for specifying read-only mode.
      * This is a local config to each ForestDB file.

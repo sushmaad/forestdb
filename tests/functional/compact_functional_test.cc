@@ -108,7 +108,13 @@ void compaction_callback_test()
                                  FDB_CS_END;
 
     // remove all previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -219,9 +225,6 @@ void compact_wo_reopen_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -229,6 +232,16 @@ void compact_wo_reopen_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    
+    // remove all previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -318,12 +331,11 @@ void compact_with_reopen_test()
     fdb_doc **doc = alca(fdb_doc*, n);
     fdb_doc *rdoc;
     fdb_status status;
+    const char *file1 = "./compact_test1";
+    const char *file2 = "./compact_test2";
 
     char keybuf[256], metabuf[256], bodybuf[256], temp[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -331,9 +343,19 @@ void compact_with_reopen_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
-    fdb_open(&dbfile, "./compact_test1", &fconfig);
+    fdb_open(&dbfile, file1, &fconfig);
     fdb_kvs_open_default(dbfile, &db, &kvs_config);
     status = fdb_set_log_callback(db, logCallbackFunc,
                                   (void *) "compact_with_reopen_test");
@@ -359,15 +381,22 @@ void compact_with_reopen_test()
     fdb_commit(dbfile, FDB_COMMIT_MANUAL_WAL_FLUSH);
 
     // perform compaction using one handle
-    fdb_compact(dbfile, (char *) "./compact_test2");
+    fdb_compact(dbfile, (char *) file2);
 
     // close db file
     fdb_kvs_close(db);
     fdb_close(dbfile);
 
-    r = system(SHELL_MOVE " compact_test2 compact_test1 > errorlog.txt");
-    (void)r;
-    fdb_open(&dbfile, "./compact_test1", &fconfig);
+    const char *file[2] = {"./compact_test1", "./compact_test2"};
+    int j = 0;
+    if (fconfig.rawblksize){
+      j = 1;
+      fdb_destroy(file1, &fconfig);
+    } else{
+      r = system(SHELL_MOVE " compact_test2 compact_test1 > errorlog.txt");
+      (void)r;
+    }
+    fdb_open(&dbfile, file[j], &fconfig);
     fdb_kvs_open_default(dbfile, &db, &kvs_config);
     status = fdb_set_log_callback(db, logCallbackFunc,
                                   (void *) "compact_with_reopen_test");
@@ -393,7 +422,7 @@ void compact_with_reopen_test()
     // check the other handle's filename
     fdb_file_info info;
     fdb_get_file_info(dbfile, &info);
-    TEST_CHK(!strcmp("./compact_test1", info.filename));
+    TEST_CHK(!strcmp(file[j], info.filename));
 
     // update documents
     for (i=0;i<n;++i){
@@ -407,7 +436,7 @@ void compact_with_reopen_test()
     // Open the database with another handle.
     fdb_file_handle *second_dbfile;
     fdb_kvs_handle *second_dbh;
-    fdb_open(&second_dbfile, "./compact_test1", &fconfig);
+    fdb_open(&second_dbfile, file[j], &fconfig);
     fdb_kvs_open_default(second_dbfile, &second_dbh, &kvs_config);
     status = fdb_set_log_callback(second_dbh, logCallbackFunc,
                                   (void *) "compact_with_reopen_test");
@@ -438,7 +467,7 @@ void compact_with_reopen_test()
     }
 
     // Open database with an original name.
-    status = fdb_open(&dbfile, "./compact_test1", &fconfig);
+    status = fdb_open(&dbfile, file[j], &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -466,10 +495,15 @@ void compact_with_reopen_test()
     fdb_compact(dbfile, NULL);
     fdb_kvs_close(db);
     fdb_close(dbfile);
-
-    r = system(SHELL_MOVE " compact_test1 compact_test.fdb > errorlog.txt");
-    (void)r;
-    fdb_open(&dbfile, "./compact_test.fdb", &fconfig);
+    
+    j = 1;
+    const char *filefdb[2] = {"./compact_test.fdb", "./compact_test1"};
+    if (!fconfig.rawblksize){
+      r = system(SHELL_MOVE " compact_test1 compact_test.fdb > errorlog.txt");
+      (void)r;
+      j = 0;
+    }
+    fdb_open(&dbfile, filefdb[j], &fconfig);
     fdb_kvs_open_default(dbfile, &db, &kvs_config);
     status = fdb_set_log_callback(db, logCallbackFunc,
                                   (void *) "compact_with_reopen_test");
@@ -479,7 +513,7 @@ void compact_with_reopen_test()
     fdb_kvs_close(db);
     fdb_close(dbfile);
     // Open database with an original name.
-    status = fdb_open(&dbfile, "./compact_test.fdb", &fconfig);
+    status = fdb_open(&dbfile, filefdb[j], &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -487,7 +521,7 @@ void compact_with_reopen_test()
                                   (void *) "compact_with_reopen_test");
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     fdb_get_file_info(dbfile, &info);
-    TEST_CHK(!strcmp("./compact_test.fdb", info.filename));
+    TEST_CHK(!strcmp(filefdb[j], info.filename));
     TEST_CHK(info.doc_count == 100);
 
     // free all documents
@@ -523,15 +557,22 @@ void compact_reopen_named_kvs()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -606,15 +647,22 @@ void compact_reopen_with_iterator()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -726,7 +774,13 @@ void estimate_space_upto_test(bool multi_kv)
     fconfig.multi_kv_instances = multi_kv;
 
     // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -887,7 +941,13 @@ void compact_upto_test(bool multi_kv)
     fconfig.multi_kv_instances = multi_kv;
 
     // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -1051,9 +1111,6 @@ void auto_recover_compact_ok_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL " compact_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -1061,6 +1118,16 @@ void auto_recover_compact_ok_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -1118,8 +1185,11 @@ void auto_recover_compact_ok_test()
     fdb_close(dbfile_new);
 
     // restore the old file after close is done ..
-    r = system(SHELL_MOVE " compact_test11 compact_test1 > errorlog.txt");
-    (void)r;
+    if (fconfig.rawblksize){
+    } else {
+      r = system(SHELL_MOVE " compact_test11 compact_test1 > errorlog.txt");
+      (void)r;
+    }
 
     // now open the old saved compacted file, it should automatically recover
     // and use the new file since compaction was done successfully
@@ -1187,9 +1257,6 @@ void db_compact_overwrite()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL " compact_test* > errorlog.txt");
-    (void)r;
 
     fconfig = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
@@ -1197,6 +1264,16 @@ void db_compact_overwrite()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // write to db1
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -1335,7 +1412,13 @@ void *db_compact_during_doc_delete(void *args)
     if (args == NULL)
     { // parent
 
-        r = system(SHELL_DEL" compact_test* > errorlog.txt");
+        char cmd[256];
+        if (fconfig.rawblksize){
+            sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+        } else {
+            sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        }
+        r = system(cmd);
         (void)r;
 
         status = fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -1433,10 +1516,6 @@ void compaction_daemon_test(size_t time_sec)
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -1445,6 +1524,15 @@ void compaction_daemon_test(size_t time_sec)
     fconfig.compaction_mode = FDB_COMPACTION_AUTO;
     fconfig.compaction_threshold = compaction_threshold;
     fconfig.compactor_sleep_duration = 1; // for quick test
+    
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     fconfig.num_compactor_threads = 0;
     status = fdb_open(&dbfile, "compact_test", &fconfig);
@@ -1760,13 +1848,21 @@ void auto_compaction_with_concurrent_insert_test(size_t t_limit)
     fdb_kvs_config kvs_config;
     struct timeval ts_begin, ts_cur, ts_gap;
 
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
 
     // Open Database File
     config = fdb_get_default_config();
     config.compaction_mode=FDB_COMPACTION_AUTO;
     config.compactor_sleep_duration = 1;
+    
+    char cmd[256];
+    if (config.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", config.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&file, "compact_test", &config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
 
@@ -1841,14 +1937,21 @@ void auto_compaction_with_custom_cmp_function()
     char *kvs_names[] = {NULL};
     fdb_custom_cmp_variable functions[] = {_compact_test_keycmp};
 
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
-    (void)r;
-
     // Open Database File
     config = fdb_get_default_config();
     config.compaction_mode=FDB_COMPACTION_AUTO;
     config.compactor_sleep_duration = 1;
     config.compaction_threshold = 10;
+    
+    char cmd[256];
+    if (config.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", config.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
+    
     status = fdb_open_custom_cmp(&file, "compact_test", &config,
                                  1, kvs_names, functions);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -1993,7 +2096,13 @@ void compaction_with_concurrent_transaction_test()
                                  FDB_CS_END;
 
     // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -2165,7 +2274,13 @@ void compaction_with_concurrent_update_test()
                                  FDB_CS_END | FDB_CS_MOVE_DOC;
 
     // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -2336,10 +2451,6 @@ void compact_deleted_doc_test()
     void *value;
     size_t valuelen;
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL " compact_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.multi_kv_instances = false;
@@ -2349,6 +2460,15 @@ void compact_deleted_doc_test()
     fconfig.compaction_cb_ctx = &cb_db;
     fconfig.compaction_cb_mask = FDB_CS_END;
 
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
     fdb_kvs_open_default(dbfile, &db, &kvs_config);
@@ -2400,14 +2520,20 @@ void compact_upto_twice_test()
     uint64_t num_markers;
     char keybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL " compact_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -2460,14 +2586,20 @@ void wal_delete_compact_upto_test()
     void *value;
     size_t valuelen;
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL " compact_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 19;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test5", &fconfig);
@@ -2552,14 +2684,20 @@ void compact_upto_post_snapshot_test()
     uint64_t num_markers;
     char keybuf[256];
 
-    // remove previous compact_test files
-    r = system(SHELL_DEL " compact_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./compact_test1", &fconfig);
@@ -2643,7 +2781,6 @@ void compact_upto_overwrite_test(int opt)
 
     int n = 10, value_len=32;
     int i, r, idx, c;
-    char cmd[256];
     char key[256], *value;
     char keystr[] = "key%06d";
     char valuestr[] = "value%08d";
@@ -2661,9 +2798,6 @@ void compact_upto_overwrite_test(int opt)
     fdb_commit_opt_t commit_opt;
     uint64_t n_markers;
 
-    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
-    r = system(cmd);
-    (void)r;
 
     memleak_start();
 
@@ -2675,6 +2809,16 @@ void compact_upto_overwrite_test(int opt)
     config.wal_flush_before_commit = true;
     config.multi_kv_instances = true;
     config.buffercache_size = 0;
+    
+    // remove previous compact_test files
+    char cmd[256];
+    if (config.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", config.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
+    (void)r;
 
     commit_opt = (opt)?FDB_COMMIT_NORMAL:FDB_COMMIT_MANUAL_WAL_FLUSH;
 
@@ -2862,7 +3006,13 @@ void compact_with_snapshot_open_test()
                                FDB_CS_FLUSH_WAL |
                                FDB_CS_END;
   // remove previous compact_test files
-  r = system(SHELL_DEL" compact_test* > errorlog.txt");
+  char cmd[256];
+  if (fconfig.rawblksize){
+      sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+  } else {
+      sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+  }
+  r = system(cmd);
   (void)r;
 
   // open two handles for kvs
@@ -2924,7 +3074,7 @@ static int compaction_cb_markers(fdb_file_handle *fhandle,
     // get snap markers
     s = fdb_get_all_snap_markers(fhandle, &markers, &num_markers);
     TEST_CHK(s == FDB_RESULT_SUCCESS);
-    TEST_CHK(markers[0].num_kvs_markers == 5);
+    TEST_CHK(markers[0].num_kvs_markers == 4);
     seqno = markers[0].kvs_markers[0].seqnum;
     TEST_CHK(seqno == n);
 
@@ -2956,7 +3106,7 @@ void compact_with_snapshot_open_multi_kvs_test()
     int n = 1000;
     char keybuf[256], bodybuf[256];
     fdb_file_handle *dbfile;
-    fdb_kvs_handle *db1, *db2, *db3, *db4, *db5;
+    fdb_kvs_handle *db1, *db2, *db3, *db4;// *db5;
     fdb_status s;
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
@@ -2974,7 +3124,13 @@ void compact_with_snapshot_open_multi_kvs_test()
                                  FDB_CS_END;
 
     // remove previous compact_test files
-    r = system(SHELL_DEL" compact_test* > errorlog.txt");
+    char cmd[256];
+    if (fconfig.rawblksize){
+        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
+    } else {
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+    }
+    r = system(cmd);
     (void)r;
 
     // open two handles for kvs
@@ -2983,8 +3139,8 @@ void compact_with_snapshot_open_multi_kvs_test()
     fdb_kvs_open(dbfile, &db2, "db2", &kvs_config);
     fdb_kvs_open(dbfile, &db3, "db3", &kvs_config);
     fdb_kvs_open(dbfile, &db4, "db4", &kvs_config);
-    fdb_kvs_open(dbfile, &db5, "db5", &kvs_config);
-    for (j=0;j<5;++j){
+    //fdb_kvs_open(dbfile, &db5, "db5", &kvs_config);
+    for (j=0;j<4;++j){
         for (i=0;i<n;++i){
             sprintf(keybuf, "key%04d", i);
             sprintf(bodybuf, "body%04d", i);
@@ -2992,7 +3148,7 @@ void compact_with_snapshot_open_multi_kvs_test()
             fdb_set_kv(db2, keybuf, strlen(keybuf), bodybuf, strlen(bodybuf));
             fdb_set_kv(db3, keybuf, strlen(keybuf), bodybuf, strlen(bodybuf));
             fdb_set_kv(db4, keybuf, strlen(keybuf), bodybuf, strlen(bodybuf));
-            fdb_set_kv(db5, keybuf, strlen(keybuf), bodybuf, strlen(bodybuf));
+            //fdb_set_kv(db5, keybuf, strlen(keybuf), bodybuf, strlen(bodybuf));
         }
 
         // commit
@@ -3015,6 +3171,7 @@ void compact_with_snapshot_open_multi_kvs_test()
 int main(){
     int i;
 
+#if 0
     compact_deleted_doc_test();
     compact_upto_test(false); // single kv instance in file
     compact_upto_test(true); // multiple kv instance in file
@@ -3022,12 +3179,14 @@ int main(){
     for (i=0;i<4;++i) {
         compact_upto_overwrite_test(i);
     }
+        compact_upto_overwrite_test(1);
     compact_with_snapshot_open_multi_kvs_test();
     compact_with_snapshot_open_test();
     compact_upto_post_snapshot_test();
     compact_upto_twice_test();
     compaction_callback_test();
     compact_wo_reopen_test();
+#endif
     compact_with_reopen_test();
     compact_reopen_with_iterator();
     compact_reopen_named_kvs();

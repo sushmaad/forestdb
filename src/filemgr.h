@@ -51,6 +51,7 @@ extern "C" {
 
 struct filemgr_config {
     uint32_t rawblksize;
+    char rawdevice[256];
     int blocksize;
     int ncacheblock;
     int flag;
@@ -92,6 +93,7 @@ struct filemgr_ops {
     ssize_t (*getblk)(int fd, uint64_t addr);
     int (*changemode)(int fd, int flags);
     int (*close)(int fd);
+    int (*remove)(const char *pathname);
     cs_off_t (*goto_eof)(int fd);
     cs_off_t (*file_size)(const char *filename);
     int (*fdatasync)(int fd);
@@ -161,6 +163,7 @@ struct filemgr {
     uint16_t filename_len;
     uint32_t blocksize;
     uint32_t rawblksize;
+    char* rawdevice[256];
     int fd;
     atomic_uint64_t pos;
     atomic_uint64_t last_commit;

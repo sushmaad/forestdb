@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 struct filemgr_ops * get_filemgr_ops();
-
+struct filemgr_ops * get_filemgr_meta_ops();
 #ifdef __cplusplus
 }
 #endif

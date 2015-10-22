@@ -716,7 +716,8 @@ struct compactor_meta * _compactor_read_metafile(char *metafile,
     struct filemgr_ops *ops;
     struct compactor_meta meta;
 
-    ops = get_filemgr_ops();
+ //   ops = get_filemgr_ops();
+    ops = get_filemgr_meta_ops();
     fd_meta = ops->open(metafile, O_RDONLY, 0644);
 
     if (fd_meta >= 0) {
@@ -885,7 +886,6 @@ fdb_status compactor_get_actual_filename(const char *filename,
     // get actual filename from metafile
     sprintf(path, "%s.meta", filename);
     meta_ptr = _compactor_read_metafile(path, &meta, log_callback);
-
     if (meta_ptr == NULL) {
         if (comp_mode == FDB_COMPACTION_MANUAL && does_file_exist(filename)) {
             strcpy(actual_filename, filename);
@@ -933,11 +933,11 @@ bool compactor_is_valid_mode(const char *filename, fdb_config *config)
     char path[MAX_FNAMELEN];
     struct filemgr_ops *ops;
 
-    ops = get_filemgr_ops();
 
     if (config->compaction_mode == FDB_COMPACTION_AUTO) {
         // auto compaction mode: invalid when
         // the file '[filename]' exists
+        ops = get_filemgr_ops();
         fd = ops->open(filename, O_RDONLY, 0644);
         if (fd != FDB_RESULT_NO_SUCH_FILE) {
             ops->close(fd);
@@ -947,6 +947,8 @@ bool compactor_is_valid_mode(const char *filename, fdb_config *config)
     } else if (config->compaction_mode == FDB_COMPACTION_MANUAL) {
         // manual compaction mode: invalid when
         // the file '[filename].meta' exists
+//	ops = get_filemgr_meta_ops();
+	ops = get_filemgr_meta_ops();
         sprintf(path, "%s.meta", filename);
         fd = ops->open(path, O_RDONLY, 0644);
         if (fd != FDB_RESULT_NO_SUCH_FILE) {

@@ -19,6 +19,9 @@
 struct filemgr_ops * get_win_filemgr_ops();
 struct filemgr_ops * get_linux_filemgr_ops();
 
+struct filemgr_ops * get_linux_filemgr_meta_ops();
+
+
 struct filemgr_ops * get_filemgr_ops()
 {
 
@@ -28,5 +31,16 @@ struct filemgr_ops * get_filemgr_ops()
 #else
     // linux, mac os x
   return get_linux_filemgr_ops();
+#endif
+}
+struct filemgr_ops * get_filemgr_meta_ops()
+{
+
+#if defined(WIN32) || defined(_WIN32)
+  // windows
+  return get_win_filemgr_ops();
+#else
+    // linux, mac os x
+  return get_linux_filemgr_meta_ops();
 #endif
 }

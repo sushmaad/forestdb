@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 struct filemgr_ops * get_filemgr_ops();
+struct filemgr_ops * get_filemgr_meta_ops();
 void filemgr_ops_set_anomalous(int behavior);
 
 // These callbacks allow test-suite to control how the file ops should behave

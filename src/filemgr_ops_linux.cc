@@ -960,4 +960,8 @@ struct filemgr_ops * get_linux_filemgr_ops()
   }
 }
 
+struct filemgr_ops * get_linux_filemgr_meta_ops()
+{
+    return &linux_file_ops;
+}
 #endif

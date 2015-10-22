@@ -40,6 +40,8 @@ static int filemgr_anomalous_behavior = 0;
 // The routines below are adapted from filemgr_ops.cc to add indirection
 struct filemgr_ops * get_win_filemgr_ops();
 struct filemgr_ops * get_linux_filemgr_ops();
+struct filemgr_ops * get_linux_filemgr_meta_ops();
+struct filemgr_ops * get_filemgr_meta_ops();
 struct filemgr_ops * get_filemgr_ops()
 {
     if (filemgr_anomalous_behavior) {
@@ -52,6 +54,21 @@ struct filemgr_ops * get_filemgr_ops()
 #else
      // linux, mac os x
     return get_linux_filemgr_ops();
+#endif
+}
+
+struct filemgr_ops * get_filemgr_meta_ops()
+{
+    if (filemgr_anomalous_behavior) {
+        return get_anomalous_filemgr_ops();
+    }
+
+#if defined(WIN32) || defined(_WIN32)
+    // windows
+    return get_win_filemgr_ops();
+#else
+     // linux, mac os x
+    return get_linux_filemgr_meta_ops();
 #endif
 }
 

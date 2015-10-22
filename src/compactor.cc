@@ -779,7 +779,7 @@ static fdb_status _compactor_store_metafile(char *metafile,
     struct filemgr_ops *ops;
     struct compactor_meta meta;
 
-    ops = get_filemgr_ops();
+    ops = get_filemgr_meta_ops();
     fd_meta = ops->open(metafile, O_RDWR | O_CREAT, 0644);
 
     if (fd_meta >= 0){
@@ -893,8 +893,8 @@ fdb_status compactor_get_actual_filename(const char *filename,
         }
         // error handling .. scan directory
         // backward search until find the first '/' or '\' (Windows)
-	
-    	ops->update_compaction_no(filename,dirname,prefix,&compaction_no, &max_compaction_no);
+
+        ops->update_compaction_no(filename,dirname,prefix,&compaction_no, &max_compaction_no);
         // Windows
 
 

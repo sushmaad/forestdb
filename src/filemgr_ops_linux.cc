@@ -593,16 +593,13 @@ void _blkmgr_linux_get_errno_str(char *buf, size_t size) {
 int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 {
     int fd;
-    if (blkdevid < 0)
+    char *pri_dev1 = filemgr_get_config()->rawdevice;
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
     {
-      char *pri_dev1 = filemgr_get_config()->rawdevice;
-      if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
-      {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to init bld device %d, %s\n", blkdevid, errStr);
         return FDB_RESULT_OPEN_FAIL;
-      }
     }
 
     //TODO remove dummy devname
@@ -800,57 +797,54 @@ fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, c
   fdb_status fs = FDB_RESULT_SUCCESS;
   char **store_names=(char **)malloc(32* sizeof(char *));
   for(int i=0;i<32;i++){
-    store_names[i]=(char *)malloc(256 * sizeof(char));	
-  } 
+    store_names[i]=(char *)malloc(256 * sizeof(char));
+  }
   int *store_remain;  // remaining stores number
   int remaining=0;
-  store_remain=&remaining;	
+  store_remain=&remaining;
   int store_max=32;
   int store_count=0; // Found stores number
 
-  if (blkdevid < 0)
+  char *pri_dev = filemgr_get_config()->rawdevice;
+  //TODO remove hard coding
+  if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
   {
-    char *pri_dev = filemgr_get_config()->rawdevice;
-    //TODO remove hard coding
-    if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
-    {
       char errStr[256];
       _blkmgr_linux_get_errno_str(errStr, 256);
       printf("failed to init blk dev %d, %s\n", blkdevid, errStr);
       return FDB_RESULT_OPEN_FAIL;
-    }
   }
   store_count = blkdev_storenames(blkdevid, store_names, store_max, store_remain);
 
   if (store_count < 0) {
-    char errStr[256];
-    _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to get storename of %s %s\n", filename, errStr);
-    }
-    else if (store_count == 0) {
-        char errStr[256];
-        _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("No store in %s %s\n", filename, errStr);
-    }
+      char errStr[256];
+      _blkmgr_linux_get_errno_str(errStr, 256);
+      printf("failed to get storename of %s %s\n", filename, errStr);
+  }
+  else if (store_count == 0) {
+      char errStr[256];
+      _blkmgr_linux_get_errno_str(errStr, 256);
+      printf("No store in %s %s\n", filename, errStr);
+  }
 
-    if (remaining > 0) {
-        char errStr[256];
-        _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("Still %d store left unsearched in %s %s\n", remaining,filename, errStr);
-    }
+  if (remaining > 0) {
+      char errStr[256];
+      _blkmgr_linux_get_errno_str(errStr, 256);
+      printf("Still %d store left unsearched in %s %s\n", remaining,filename, errStr);
+  }
 
-    for(int i=0;i<store_count;i++){
-	    if (!strncmp(store_names[i], prefix, strlen(prefix))) {
-		// Need to check filemgr for possible open entry?
-		if (store_remove(blkdevid, store_names[i])) {
-		    fs = FDB_RESULT_FILE_REMOVE_FAIL;
-		    return fs;
-		}
-	    }
+  for(int i=0;i<store_count;i++){
+      if (!strncmp(store_names[i], prefix, strlen(prefix))) {
+          // Need to check filemgr for possible open entry?
+          if (store_remove(blkdevid, store_names[i])) {
+              fs = FDB_RESULT_FILE_REMOVE_FAIL;
+              return fs;
+          }
+      }
 
-    }
-    free(store_names);
-    return fs;
+  }
+  free(store_names);
+  return fs;
 }
 
 int _blkmgr_linux_remove(const char *filename)
@@ -877,24 +871,21 @@ void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, cha
 {
     char **store_names=(char **)malloc(32* sizeof(char *));
     for(int i=0;i<32;i++){
-	store_names[i]=(char *)malloc(256 * sizeof(char));	
-    } 
+	store_names[i]=(char *)malloc(256 * sizeof(char));
+    }
     int *store_remain;  // remaining stores number
     int remaining=0;
     store_remain=&remaining;
     int store_max=32;
     int store_count=0; // Found stores number
-      
-    if (blkdevid < 0)
+
+    char *pri_dev = filemgr_get_config()->rawdevice;
+    if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
     {
-      char *pri_dev = filemgr_get_config()->rawdevice; 
-      if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
-      {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to init block device %d, %s\n", blkdevid, errStr);
         return;
-      }
     }
     store_count = blkdev_storenames(blkdevid, store_names, store_max, store_remain);
     if (store_count < 0) {
@@ -915,15 +906,15 @@ void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, cha
     }
 
     for(int i=0;i<store_count;i++){
-	    if (!strncmp(store_names[i], prefix, strlen(prefix))) {
-	            *compaction_no = -1;
-                    sscanf(store_names[i] + strlen(prefix), "%d", compaction_no);
-                    if (*compaction_no >= 0) {
-                        if (*compaction_no > *max_compaction_no) {
-                            *max_compaction_no = *compaction_no;
-                        }
-                    }
-	     }
+        if (!strncmp(store_names[i], prefix, strlen(prefix))) {
+            *compaction_no = -1;
+            sscanf(store_names[i] + strlen(prefix), "%d", compaction_no);
+            if (*compaction_no >= 0) {
+                if (*compaction_no > *max_compaction_no) {
+                    *max_compaction_no = *compaction_no;
+                }
+            }
+        }
     }
     free(store_names);
 

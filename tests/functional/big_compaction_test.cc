@@ -35,7 +35,7 @@
 #if !defined(WIN32) && !defined(_WIN32)
 #include <unistd.h>
 #endif
-
+#include <uftl/hcd.h>
 #include "libforestdb/forestdb.h"
 #include "test.h"
 #include "arch.h"
@@ -149,14 +149,16 @@ void multi_writers(const char *test_name) {
     fconfig.multi_kv_instances = MULTI_KV;
     fconfig.buffercache_size = BUFFERCACHE_SIZE;
     fconfig.durability_opt = FDB_DRB_ODIRECT;
-    
+
     // remove previous test files
     char cmd[256];
     if (fconfig.rawblksize){
-      sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-      sprintf(cmd, SHELL_DEL TEST_FILENAME "* > errorlog.txt");
-    }    
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL TEST_FILENAME "* > errorlog.txt");
     r = system(cmd);
     (void)r;
 

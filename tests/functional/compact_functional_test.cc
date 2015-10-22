@@ -24,6 +24,7 @@
 #include <unistd.h>
 #endif
 
+#include <uftl/hcd.h>
 #include "libforestdb/forestdb.h"
 #include "test.h"
 
@@ -110,10 +111,12 @@ void compaction_callback_test()
     // remove all previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -232,14 +235,16 @@ void compact_wo_reopen_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     // remove all previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -343,14 +348,16 @@ void compact_with_reopen_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -495,7 +502,7 @@ void compact_with_reopen_test()
     fdb_compact(dbfile, NULL);
     fdb_kvs_close(db);
     fdb_close(dbfile);
-    
+
     j = 1;
     const char *filefdb[2] = {"./compact_test.fdb", "./compact_test1"};
     if (!fconfig.rawblksize){
@@ -567,10 +574,12 @@ void compact_reopen_named_kvs()
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -653,14 +662,16 @@ void compact_reopen_with_iterator()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -776,10 +787,12 @@ void estimate_space_upto_test(bool multi_kv)
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -943,10 +956,12 @@ void compact_upto_test(bool multi_kv)
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -1118,14 +1133,16 @@ void auto_recover_compact_ok_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -1268,10 +1285,12 @@ void db_compact_overwrite()
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -1414,10 +1433,12 @@ void *db_compact_during_doc_delete(void *args)
 
         char cmd[256];
         if (fconfig.rawblksize){
-            sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-        } else {
-            sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+            blkdev_remove(fconfig.rawdevice);
+            sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+            r = system(cmd);
+            (void)r;
         }
+        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
         r = system(cmd);
         (void)r;
 
@@ -1524,13 +1545,15 @@ void compaction_daemon_test(size_t time_sec)
     fconfig.compaction_mode = FDB_COMPACTION_AUTO;
     fconfig.compaction_threshold = compaction_threshold;
     fconfig.compactor_sleep_duration = 1; // for quick test
-    
+
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -1853,13 +1876,15 @@ void auto_compaction_with_concurrent_insert_test(size_t t_limit)
     config = fdb_get_default_config();
     config.compaction_mode=FDB_COMPACTION_AUTO;
     config.compactor_sleep_duration = 1;
-    
+
     char cmd[256];
     if (config.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", config.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -1942,16 +1967,18 @@ void auto_compaction_with_custom_cmp_function()
     config.compaction_mode=FDB_COMPACTION_AUTO;
     config.compactor_sleep_duration = 1;
     config.compaction_threshold = 10;
-    
+
     char cmd[256];
     if (config.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", config.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
-    
+
     status = fdb_open_custom_cmp(&file, "compact_test", &config,
                                  1, kvs_names, functions);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -2098,10 +2125,12 @@ void compaction_with_concurrent_transaction_test()
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -2276,10 +2305,12 @@ void compaction_with_concurrent_update_test()
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -2463,10 +2494,12 @@ void compact_deleted_doc_test()
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
     // open db
@@ -2524,14 +2557,16 @@ void compact_upto_twice_test()
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -2590,14 +2625,16 @@ void wal_delete_compact_upto_test()
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 19;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -2688,14 +2725,16 @@ void compact_upto_post_snapshot_test()
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -2809,14 +2848,16 @@ void compact_upto_overwrite_test(int opt)
     config.wal_flush_before_commit = true;
     config.multi_kv_instances = true;
     config.buffercache_size = 0;
-    
+
     // remove previous compact_test files
     char cmd[256];
     if (config.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", config.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -3008,10 +3049,12 @@ void compact_with_snapshot_open_test()
   // remove previous compact_test files
   char cmd[256];
   if (fconfig.rawblksize){
-      sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-  } else {
-      sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+      blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
   }
+  sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
   r = system(cmd);
   (void)r;
 
@@ -3126,10 +3169,12 @@ void compact_with_snapshot_open_multi_kvs_test()
     // remove previous compact_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fconfig.rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
+    sprintf(cmd, SHELL_DEL " compact_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
 
@@ -3170,7 +3215,6 @@ void compact_with_snapshot_open_multi_kvs_test()
 
 int main(){
     int i;
-
 #if 0
     compact_deleted_doc_test();
     compact_upto_test(false); // single kv instance in file
@@ -3179,7 +3223,6 @@ int main(){
     for (i=0;i<4;++i) {
         compact_upto_overwrite_test(i);
     }
-        compact_upto_overwrite_test(1);
     compact_with_snapshot_open_multi_kvs_test();
     compact_with_snapshot_open_test();
     compact_upto_post_snapshot_test();

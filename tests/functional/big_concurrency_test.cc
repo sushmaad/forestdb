@@ -23,7 +23,7 @@
 #if !defined(WIN32) && !defined(_WIN32)
 #include <unistd.h>
 #endif
-
+#include <uftl/hcd.h>
 #include "libforestdb/forestdb.h"
 #include "test.h"
 #include "arch.h"
@@ -208,10 +208,12 @@ void multi_file_write_with_inmem_snap(const char *test_name) {
     // remove previous test files
     char cmd[256];
     if (fdb_get_default_config().rawblksize){
-        sprintf(cmd, SHELL_DEL " %s > errorlog.txt", fdb_get_default_config().rawdevice);
-    } else {
-        sprintf(cmd, SHELL_DEL TEST_FILENAME "* > errorlog.txt");
-    }    
+        blkdev_remove(fdb_get_default_config().rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fdb_get_default_config().rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL TEST_FILENAME "* > errorlog.txt");
     r = system(cmd);
     (void)r;
 

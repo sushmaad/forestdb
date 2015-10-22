@@ -683,6 +683,14 @@ cs_off_t _blkmgr_linux_goto_eof(int fd)
 // LCOV_EXCL_START
 cs_off_t _blkmgr_linux_file_size(const char *filename)
 {
+    char *pri_dev1 = filemgr_get_config()->rawdevice;
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+    {
+        char errStr[256];
+        _blkmgr_linux_get_errno_str(errStr, 256);
+        printf("failed to init bld device %d, %s\n", blkdevid, errStr);
+        return FDB_RESULT_OPEN_FAIL;
+    }
   return store_size(blkdevid, filename);
 
 }
@@ -757,7 +765,15 @@ int _blkmgr_linux_get_fs_type(int src_fd)
 
 bool _blkmgr_linux_does_file_exist(const char *filename)
 {
-  return store_exist(blkdevid, filename);
+    char *pri_dev1 = filemgr_get_config()->rawdevice;
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+    {
+        char errStr[256];
+        _blkmgr_linux_get_errno_str(errStr, 256);
+        printf("failed to init bld device %d, %s\n", blkdevid, errStr);
+        return FDB_RESULT_OPEN_FAIL;
+    }
+    return store_exist(blkdevid, filename);
 }
 
 int _blkmgr_linux_copy_file_range(int fs_type,
@@ -849,13 +865,21 @@ fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, c
 
 int _blkmgr_linux_remove(const char *filename)
 {
-  size_t rc = store_remove(blkdevid, filename);
-  fdb_status fs = FDB_RESULT_SUCCESS;
-  if (rc < 0) {
-    switch (rc){
-      case HCD_ERR_INVALID_INPUT:
-        fs = FDB_RESULT_INVALID_ARGS;
-        break;
+    char *pri_dev1 = filemgr_get_config()->rawdevice;
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+    {
+        char errStr[256];
+        _blkmgr_linux_get_errno_str(errStr, 256);
+        printf("failed to init bld device %d, %s\n", blkdevid, errStr);
+        return FDB_RESULT_OPEN_FAIL;
+    }
+    size_t rc = store_remove(blkdevid, filename);
+    fdb_status fs = FDB_RESULT_SUCCESS;
+    if (rc < 0) {
+        switch (rc){
+            case HCD_ERR_INVALID_INPUT:
+                fs = FDB_RESULT_INVALID_ARGS;
+                break;
       case HCD_ERR_STORE_NOT_FOUND:
         fs =  FDB_RESULT_NO_SUCH_FILE;
         break;

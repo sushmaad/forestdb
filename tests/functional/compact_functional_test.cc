@@ -3216,7 +3216,6 @@ void compact_with_snapshot_open_multi_kvs_test()
 
 int main(){
     int i;
-#if 0
     compact_deleted_doc_test();
     compact_upto_test(false); // single kv instance in file
     compact_upto_test(true); // multiple kv instance in file
@@ -3237,8 +3236,7 @@ int main(){
     estimate_space_upto_test(true); // multiple kv instance in file
     auto_recover_compact_ok_test();
     db_compact_overwrite();
-#endif
-    db_compact_during_doc_delete(NULL);
+    //db_compact_during_doc_delete(NULL);
     compaction_with_concurrent_transaction_test();
     compaction_with_concurrent_update_test();
     //auto_compaction_with_custom_cmp_function();

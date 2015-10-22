@@ -24,6 +24,8 @@
 #include <unistd.h>
 #endif
 
+#include <uftl/hcd.h>
+
 #include "libforestdb/forestdb.h"
 #include "test.h"
 #include "internal_types.h"
@@ -46,14 +48,22 @@ void basic_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy test files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " dummy* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     // Read-Write mode test without a create flag.
     fconfig.flags = 0;
@@ -248,7 +258,7 @@ void basic_test()
     status = fdb_set(db_rdonly, doc[i]);
     TEST_CHK(status == FDB_RESULT_RONLY_VIOLATION);
     TEST_CHK(!strcmp(fdb_error_msg(status), "database is read-only"));
-    
+
     if(!fconfig.rawblksize)
     {
       status = fdb_commit(dbfile_rdonly, FDB_COMMIT_NORMAL);
@@ -299,8 +309,16 @@ void set_get_max_keylen()
     fdb_config fconfig = fdb_get_default_config();
     fconfig.chunksize = 16;
 
-
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    //remove previous dummy file
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " dummy* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     for (int i = 0; i < len; ++i) {
@@ -344,16 +362,26 @@ void config_test()
     int i;
     size_t bcache_space_used;
     char fname[256];
-
-    // remove previous dummy test files
-    int r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
+    int r;
 
     bcache_space_used = fdb_get_buffer_cache_used();
     TEST_CHK(bcache_space_used == 0);
 
     fconfig = fdb_get_default_config();
     fconfig.buffercache_size= (uint64_t) -1;
+
+    //remove previous dummy file
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " dummy* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, "./dummy1", &fconfig);
     TEST_CHK(status == FDB_RESULT_TOO_BIG_BUFFER_CACHE);
 
@@ -418,9 +446,6 @@ void deleted_doc_get_api_test()
     fdb_kvs_config kvs_config;
     char keybuf[256], bodybuf[256];
 
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
-    (void)r;
-
     memset(doc, 0, sizeof(fdb_doc));
     doc->key = &keybuf[0];
     doc->body = &bodybuf[0];
@@ -429,6 +454,19 @@ void deleted_doc_get_api_test()
     // open dbfile
     fconfig = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
+
+    //remove previous dummy file
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " dummy* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, "./dummy1", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open(dbfile, &db, NULL, &kvs_config);
@@ -511,12 +549,22 @@ void large_batch_write_no_commit_test()
     fdb_kvs_config kvs_config;
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
-    (void)r;
-
     // open dbfile
     fconfig = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
+
+    //remove previous dummy file
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " dummy* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, "./dummy1", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open(dbfile, &db, NULL, &kvs_config);
@@ -569,8 +617,16 @@ void set_get_meta_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    //remove previous dummy file
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " dummy* > errorlog.txt");
+    r = system(cmd);
     (void)r;
 
     // open db
@@ -637,6 +693,12 @@ void long_filename_test()
     config = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
     sprintf(temp, SHELL_DMT"%s", keyword);
+
+    if (config.rawblksize)
+    {
+        //TODO currently huge file name is not supported
+        return;
+    }
 
     // filename longer than 1024 bytes
     sprintf(filename, "%s", keyword);
@@ -743,13 +805,21 @@ void seq_tree_exception_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.seqtree_opt = FDB_SEQTREE_NOT_USE;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    (void)r;
+
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -816,6 +886,12 @@ void seq_tree_exception_test()
     }
 
     // remove previous dummy files
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL" dummy* > errorlog.txt");
     (void)r;
 
@@ -883,16 +959,23 @@ void wal_commit_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -987,13 +1070,21 @@ void db_close_and_remove()
     fdb_kvs_config kvs_config;
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
-    (void)r;
-
     // open dbfile
     fconfig = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
     fconfig.cleanup_cache_onclose = false;
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    (void)r;
+
     fdb_open(&dbfile, "./dummy1", &fconfig);
     fdb_kvs_open(dbfile, &db, NULL, &kvs_config);
 
@@ -1014,8 +1105,14 @@ void db_close_and_remove()
     fdb_kvs_close(db);
     fdb_close(dbfile);
 
-    // remove dbfile
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    // remove previous dummy files
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" dummy* > errorlog.txt");
     (void)r;
 
     // re-open read-only
@@ -1044,16 +1141,23 @@ void db_drop_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 16777216;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -1078,6 +1182,12 @@ void db_drop_test()
     fdb_close(dbfile);
 
     // Remove the database file manually.
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL " dummy1 > errorlog.txt");
     (void)r;
 
@@ -1143,16 +1253,23 @@ void db_destroy_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
-    (void)r;
-
     fconfig = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 16777216;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -1184,7 +1301,7 @@ void db_destroy_test()
     for (i=0;i<n;++i){
         fdb_set(db2, doc[i]);
     }
- 
+
     // commit
     fdb_commit(dbfile2, FDB_COMMIT_NORMAL);
 
@@ -1253,10 +1370,6 @@ void operational_stats_test(bool multi_kv)
     real_doc.key = &keybuf;
     real_doc.body = &bodybuf;
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
 
@@ -1266,6 +1379,17 @@ void operational_stats_test(bool multi_kv)
     fconfig.compaction_threshold = 0;
     fconfig.multi_kv_instances = multi_kv;
     r = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     fdb_open(&dbfile, "./dummy1", &fconfig);
     if (multi_kv) {
@@ -1552,16 +1676,23 @@ void multi_thread_test(
 
     char keybuf[1024], metabuf[1024], bodybuf[1024], temp[1024];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" " FILENAME "* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 16777216;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     memleak_start();
 
@@ -1682,7 +1813,15 @@ void *multi_thread_client_shutdown(void *args)
     { // parent
         memleak_start();
 
-        r = system(SHELL_DEL" dummy* > errorlog.txt");
+        // remove previous dummy files
+        char cmd[256];
+        if (fdb_get_default_config().rawblksize){
+            blkdev_remove(fdb_get_default_config().rawdevice);
+            sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fdb_get_default_config().rawdevice);
+            r = system(cmd);
+            (void)r;
+        }
+        r = system(SHELL_DEL " dummy* > errorlog.txt");
         (void)r;
         nclients = 2;
         tid = alca(thread_t, nclients);
@@ -1744,14 +1883,22 @@ void *multi_thread_kvs_client(void *args)
     { // parent
         memleak_start();
 
-        r = system(SHELL_DEL" dummy* > errorlog.txt");
-        (void)r;
-
         // init dbfile
         fconfig = fdb_get_default_config();
         fconfig.buffercache_size = 0;
         fconfig.wal_threshold = 1024;
         fconfig.compaction_threshold = 0;
+
+        // remove previous dummy files
+        char cmd[256];
+        if (fconfig.rawblksize){
+            blkdev_remove(fconfig.rawdevice);
+            sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+            r = system(cmd);
+            (void)r;
+        }
+        r = system(SHELL_DEL " dummy* > errorlog.txt");
+        (void)r;
 
         status = fdb_open(&dbfile, "./dummy1", &fconfig);
         TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -1864,16 +2011,23 @@ void incomplete_block_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -1959,10 +2113,6 @@ void custom_compare_primitive_test()
     char keybuf[256], bodybuf[256];
     double key_double, key_double_prev;
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -1972,6 +2122,17 @@ void custom_compare_primitive_test()
     fconfig.multi_kv_instances = true;
 
     kvs_config.custom_cmp = _cmp_double;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db with custom compare function for double key type
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -2080,10 +2241,6 @@ void custom_compare_variable_test()
     char keybuf[256], bodybuf[256];
     char prev_key[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2093,6 +2250,17 @@ void custom_compare_variable_test()
     fconfig.multi_kv_instances = true;
 
     kvs_config.custom_cmp = _cmp_variable;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db with custom compare function for variable length key type
     //fdb_open_cmp_variable(&dbfile, "./dummy1", &fconfig);
@@ -2272,10 +2440,6 @@ void custom_compare_commit_compact(bool eqkeys)
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
@@ -2284,11 +2448,16 @@ void custom_compare_commit_compact(bool eqkeys)
 
     kvs_config.custom_cmp = _cmp_variable;
 
-
-
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
     (void)r;
-
 
     // open db
     status = fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -2371,10 +2540,6 @@ void custom_seqnum_test(bool multi_kv)
     real_doc.key = &keybuf;
     real_doc.body = &bodybuf;
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
 
@@ -2383,6 +2548,17 @@ void custom_seqnum_test(bool multi_kv)
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
     fconfig.multi_kv_instances = multi_kv;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
     r = 0;
 
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -2496,10 +2672,6 @@ void doc_compression_test()
 
     char keybuf[256], metabuf[256], bodybuf[256], temp[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2507,6 +2679,18 @@ void doc_compression_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compress_document_body = true;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
+    r = 0;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -2644,10 +2828,6 @@ void read_doc_by_offset_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2655,6 +2835,17 @@ void read_doc_by_offset_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 3600;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -2769,10 +2960,6 @@ void purge_logically_deleted_doc_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* fdb_test_config.json > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2780,6 +2967,17 @@ void purge_logically_deleted_doc_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 2;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -2910,10 +3108,6 @@ void api_wrapper_test()
 
     char keybuf[256], bodybuf[256], temp[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -2921,6 +3115,17 @@ void api_wrapper_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./dummy1", &fconfig);
@@ -3002,10 +3207,6 @@ void flush_before_commit_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -3014,6 +3215,17 @@ void flush_before_commit_test()
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
     fconfig.wal_flush_before_commit = true;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "dummy1", &fconfig);
@@ -3143,10 +3355,6 @@ void flush_before_commit_multi_writers_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fconfig = fdb_get_default_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 8;
@@ -3156,6 +3364,17 @@ void flush_before_commit_multi_writers_test()
     fconfig.wal_flush_before_commit = true;
 
     kvs_config = fdb_get_default_kvs_config();
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile1, "dummy1", &fconfig);
@@ -3288,10 +3507,6 @@ void auto_commit_test()
     void *value_out;
     size_t valuelen;
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
@@ -3299,6 +3514,17 @@ void auto_commit_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.durability_opt = FDB_DRB_ASYNC;
     fconfig.auto_commit = true;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     status = fdb_open(&dbfile, "dummy1", &fconfig);
@@ -3368,16 +3594,23 @@ void last_wal_flush_header_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "dummy1", &fconfig);
@@ -3581,10 +3814,6 @@ void long_key_test()
     char *keybuf;
     char metabuf[256], bodybuf[256], temp[256];
 
-    // remove previous dummy files
-    r = system(SHELL_DEL " dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
@@ -3593,6 +3822,17 @@ void long_key_test()
     fconfig.durability_opt = FDB_DRB_ASYNC;
 
     keybuf = alca(char, FDB_MAX_KEYLEN);
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "dummy1", &fconfig);
@@ -3694,15 +3934,22 @@ void open_multi_files_kvs_test()
     fdb_kvs_info kvs_info;
     fdb_status status;
 
-    // remove previous dummy test files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.compaction_mode = FDB_COMPACTION_MANUAL;
     fconfig.durability_opt = FDB_DRB_ASYNC;
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     // 1024 kvs via 128 per dbfile
     for(j=0;j<n_files;++j){
@@ -3827,12 +4074,19 @@ void get_byoffset_diff_kvs_test()
     fdb_status status;
     char keybuf[256], bodybuf[256];
 
-    // remove previous dummy test files
-    r = system(SHELL_DEL" dummy* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
+
+    // remove previous dummy files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL " dummy* > errorlog.txt");
+    (void)r;
 
     status = fdb_open(&dbfile, "./dummy1", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -3880,44 +4134,44 @@ void get_byoffset_diff_kvs_test()
 
 int main(){
     basic_test();
-    //set_get_max_keylen();
-    //config_test();
-    //deleted_doc_get_api_test();
-    //set_get_meta_test();
-    //get_byoffset_diff_kvs_test();
+    set_get_max_keylen();
+    config_test();
+    deleted_doc_get_api_test();
+    set_get_meta_test();
+    get_byoffset_diff_kvs_test();
 #if !defined(WIN32) && !defined(_WIN32)
 #ifndef _MSC_VER
-    //long_filename_test(); // temporarily disable until windows is fixed
+    long_filename_test(); // temporarily disable until windows is fixed
 #endif
 #endif
-    //error_to_str_test();
-    //seq_tree_exception_test();
-    //wal_commit_test();
-    //incomplete_block_test();
-    //custom_compare_primitive_test();
-    //custom_compare_variable_test();
-    //custom_compare_commit_compact(false);
-    //custom_compare_commit_compact(true);
-    //custom_seqnum_test(true); // multi-kv
-    //custom_seqnum_test(false); // single kv mode
-    //db_close_and_remove();
-    //db_drop_test();
-   // db_destroy_test();
-    //doc_compression_test();
-    //read_doc_by_offset_test();
-    //api_wrapper_test();
-    //flush_before_commit_test();
-    //flush_before_commit_multi_writers_test();
+    error_to_str_test();
+    seq_tree_exception_test();
+    wal_commit_test();
+    incomplete_block_test();
+    custom_compare_primitive_test();
+    custom_compare_variable_test();
+    custom_compare_commit_compact(false);
+    custom_compare_commit_compact(true);
+    custom_seqnum_test(true); // multi-kv
+    custom_seqnum_test(false); // single kv mode
+    db_close_and_remove();
+    db_drop_test();
+    db_destroy_test();
+    doc_compression_test();
+    read_doc_by_offset_test();
+    api_wrapper_test();
+    flush_before_commit_test();
+    flush_before_commit_multi_writers_test();
     //auto_commit_test();
     //last_wal_flush_header_test();
     //long_key_test();
-    //large_batch_write_no_commit_test();
-    //multi_thread_client_shutdown(NULL);
-    //multi_thread_kvs_client(NULL);
-    //purge_logically_deleted_doc_test();
-    //operational_stats_test(false);
-    //operational_stats_test(true);
-    //multi_thread_test(40*1024, 1024, 20, 1, 100, 2, 6);
+    large_batch_write_no_commit_test();
+    multi_thread_client_shutdown(NULL);
+    multi_thread_kvs_client(NULL);
+    purge_logically_deleted_doc_test();
+    operational_stats_test(false);
+    operational_stats_test(true);
+    multi_thread_test(40*1024, 1024, 20, 1, 100, 2, 6);
     //open_multi_files_kvs_test();
 
     return 0;

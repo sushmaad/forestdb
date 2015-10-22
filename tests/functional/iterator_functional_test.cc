@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <uftl/hcd.h>
 #if !defined(WIN32) && !defined(_WIN32)
 #include <unistd.h>
 #endif
@@ -48,16 +49,23 @@ void iterator_test()
 
     char keybuf[256], metabuf[256], bodybuf[256], temp[256];
 
-    // remove  all previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove  all previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -333,13 +341,21 @@ void iterator_with_concurrent_updates_test()
     fdb_status status;
     char keybuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     // open db1, db2, db3 on the same file
     fconfig = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
+
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
 
     fdb_kvs_open_default(dbfile, &db1, &kvs_config);
@@ -427,6 +443,13 @@ void iterator_compact_uncommitted_db()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
 
     // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL" iterator_test* > errorlog.txt");
     (void)r;
 
@@ -498,16 +521,23 @@ void iterator_seek_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -818,14 +848,21 @@ void iterator_complete_test(int insert_opt, int delete_opt)
     fdb_status s;
     uint64_t mask = 0x11111111111; //0x11111111111
 
-    sprintf(cmd, SHELL_DEL " iterator_test*");
-    r = system(cmd);
-    (void)r;
-
     memleak_start();
 
     config = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
+
+    if (config.rawblksize) {
+        char cmd[256];
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " iterator_test*");
+    r = system(cmd);
+    (void)r;
     s = fdb_open(&dbfile, "./iterator_test", &config);
     TEST_CHK(s == FDB_RESULT_SUCCESS);
 
@@ -1411,14 +1448,21 @@ void iterator_extreme_key_test()
     fdb_iterator *fit;
     fdb_status s;
 
-    sprintf(cmd, SHELL_DEL " iterator_test*");
-    r = system(cmd);
-    (void)r;
-
     memleak_start();
 
     config = fdb_get_default_config();
     kvs_config = fdb_get_default_kvs_config();
+    if (config.rawblksize) {
+        char cmd[256];
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " iterator_test*");
+    r = system(cmd);
+    (void)r;
+
     s = fdb_open(&dbfile, "./iterator_test", &config);
     TEST_CHK(s == FDB_RESULT_SUCCESS);
     s = fdb_kvs_open(dbfile, &db, NULL, &kvs_config);
@@ -1534,15 +1578,23 @@ void iterator_no_deletes_test()
     fdb_iterator *it;
     fdb_status status;
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test", &fconfig);
@@ -1618,6 +1670,13 @@ void iterator_set_del_docs_test()
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fdb_doc **doc = alca(fdb_doc*, n);
     fdb_doc *vdoc;
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL" iterator_test* > errorlog.txt");
     (void)r;
 
@@ -1704,16 +1763,23 @@ void iterator_del_next_test()
     rdoc->body = bodybuf;
     rdoc->flags = 0;
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -1820,16 +1886,23 @@ void sequence_iterator_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -2057,15 +2130,22 @@ void sequence_iterator_duplicate_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -2168,16 +2248,23 @@ void reverse_sequence_iterator_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -2328,16 +2415,23 @@ void reverse_sequence_iterator_kvs_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -2527,16 +2621,23 @@ void reverse_iterator_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -2701,16 +2802,23 @@ void iterator_seek_wal_only_test()
 
     char keybuf[256], metabuf[256], bodybuf[256];
 
-    // remove previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.buffercache_size = 0;
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+
+    // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     fdb_open(&dbfile, "./iterator_test1", &fconfig);
@@ -2957,6 +3065,13 @@ void iterator_after_wal_threshold()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
 
     // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL" iterator_test* > errorlog.txt");
     (void)r;
 
@@ -3034,6 +3149,13 @@ void iterator_manual_wal_flush()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
 
     // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL" iterator_test* > errorlog.txt");
     (void)r;
 
@@ -3149,6 +3271,13 @@ void iterator_concurrent_compaction()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
 
     // remove previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
     r = system(SHELL_DEL" iterator_test* > errorlog.txt");
     (void)r;
 
@@ -3224,16 +3353,23 @@ void iterator_offset_access_test()
     fdb_status s;
     fdb_iterator *it;
 
-    // remove  all previous iterator_test files
-    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     fconfig.wal_threshold = 512;
     fconfig.buffercache_size = 4096;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_mode = FDB_COMPACTION_MANUAL;
+
+    // remove  all previous iterator_test files
+    if (fconfig.rawblksize) {
+        char cmd[256];
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    r = system(SHELL_DEL" iterator_test* > errorlog.txt");
+    (void)r;
 
     // open db
     s = fdb_open(&dbfile, "./iterator_test1", &fconfig);

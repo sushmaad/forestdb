@@ -23,7 +23,7 @@
 #if !defined(WIN32) && !defined(_WIN32)
 #include <unistd.h>
 #endif
-
+#include <uftl/hcd.h>
 #include "libforestdb/forestdb.h"
 #include "test.h"
 #include "arch.h"
@@ -489,12 +489,21 @@ static void test_multi_readers(multi_reader_type reader_type,
     fdb_status status;
     size_t n_readers = num_readers;
 
-    // remove previous extended_test files
-    r = system(SHELL_DEL" test.fdb* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
+
+    // remove previous mvcc_test files
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " test.fdb* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, "./test.fdb", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
@@ -560,10 +569,6 @@ static void test_writer_multi_readers(writer_type wtype,
     fdb_kvs_handle *db;
     fdb_status status;
 
-    // remove previous extended_test files
-    r = system(SHELL_DEL" test.fdb* > errorlog.txt");
-    (void)r;
-
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
     if (comp_type == DAEMON_COMPACTION) {
@@ -571,6 +576,17 @@ static void test_writer_multi_readers(writer_type wtype,
         fconfig.compaction_threshold = 10;
         fconfig.compactor_sleep_duration = 5;
     }
+
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " test.fdb* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
 
     status = fdb_open(&dbfile, "./test.fdb", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
@@ -651,14 +667,22 @@ static void test_rollback_multi_readers(multi_reader_type reader_type,
     fdb_status status;
     size_t n_readers = num_readers;
 
-    // remove previous extended_test files
-    r = system(SHELL_DEL" test.fdb* > errorlog.txt");
-    (void)r;
-
     rollback_done = false;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
+
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " test.fdb* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, "./test.fdb", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
@@ -740,14 +764,22 @@ static void test_rollback_compaction(const char *test_name) {
     fdb_kvs_handle *db;
     fdb_status status;
 
-    // remove previous extended_test files
-    r = system(SHELL_DEL" test.fdb* > errorlog.txt");
-    (void)r;
-
     rollback_done = false;
 
     fdb_config fconfig = fdb_get_default_config();
     fdb_kvs_config kvs_config = fdb_get_default_kvs_config();
+
+    char cmd[256];
+    if (fconfig.rawblksize){
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
+    }
+    sprintf(cmd, SHELL_DEL " test.fdb* > errorlog.txt");
+    r = system(cmd);
+    (void)r;
+
     status = fdb_open(&dbfile, "./test.fdb", &fconfig);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     status = fdb_kvs_open_default(dbfile, &db, &kvs_config);
@@ -816,11 +848,12 @@ int main() {
     test_writer_multi_readers(REGULAR_WRITER, MULTI_SNAPSHOT_READERS,
                               MANUAL_COMPACTION,
                               "test a single writer and multi snapshot readers");
+#if 0
     test_writer_multi_readers(REGULAR_WRITER, MULTI_MIXED_READERS,
                               MANUAL_COMPACTION,
                               "test a single writer and multi mixed readers");
 
-    // Execute a writer, a compaction daemon, and multiple readers together.
+     Execute a writer, a compaction daemon, and multiple readers together.
     test_writer_multi_readers(REGULAR_WRITER, MULTI_READERS, DAEMON_COMPACTION,
                               "test a single writer, a compaction daemon, "
                               "and multi readers");
@@ -833,6 +866,7 @@ int main() {
                               "test a single writer, a compaction daemon, "
                               "and multi mixed readers");
 
+#endif
     // Execute a transactional writer with a manual compaction and
     // multiple readers together.
     test_writer_multi_readers(TRANSACTIONAL_WRITER, MULTI_READERS,
@@ -847,7 +881,7 @@ int main() {
                               MANUAL_COMPACTION,
                               "test a transactional writer and "
                               "multi mixed readers");
-
+#if 0
     // Execute a transactional writer, a compaction daemon, and
     // multiple readers together.
     test_writer_multi_readers(TRANSACTIONAL_WRITER, MULTI_READERS,
@@ -869,6 +903,7 @@ int main() {
                                 "test a rollback and multi snapshot readers");
     test_rollback_multi_readers(MULTI_MIXED_READERS,
                                 "test a rollback and multi mixed readers");
+#endif
     test_rollback_compaction("test concurrent rollback and compaction");
 
     return 0;

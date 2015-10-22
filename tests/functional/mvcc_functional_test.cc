@@ -50,6 +50,9 @@ void rollback_secondary_kvs()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -122,6 +125,9 @@ void multi_version_test()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -260,11 +266,14 @@ void crash_recovery_test(bool walflush)
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -410,6 +419,9 @@ void snapshot_test()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -690,11 +702,14 @@ void snapshot_stats_test()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -797,11 +812,14 @@ void snapshot_with_uncomitted_data_test()
     config.wal_flush_before_commit = true;
     config.multi_kv_instances = true;
     config.buffercache_size = 0*1024*1024;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
       blkdev_remove(config.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -953,6 +971,9 @@ void in_memory_snapshot_test()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -1154,6 +1175,9 @@ void in_memory_snapshot_on_dirty_hbtrie_test()
     char cmd[256];
     if (config.rawblksize){
       blkdev_remove(config.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -1515,11 +1539,14 @@ void in_memory_snapshot_compaction_test()
     config.compaction_cb = cb_inmem_snap;
     config.compaction_cb_mask = FDB_CS_MOVE_DOC;
     config.compaction_cb_ctx = &cargs;
-    
+
     //remove previous mvcc files
     char cmd[256];
     if (config.rawblksize){
       blkdev_remove(config.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -1652,6 +1679,9 @@ void snapshot_clone_test()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -1960,6 +1990,9 @@ void snapshot_parallel_clone_test()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -2060,6 +2093,9 @@ void snapshot_markers_in_file_test(bool multi_kv)
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -2211,11 +2247,14 @@ void rollback_forward_seqnum()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
-    
+
     //remove previous mvcc files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -2325,6 +2364,9 @@ void rollback_test(bool multi_kv)
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -2498,6 +2540,9 @@ void rollback_and_snapshot_test()
     char cmd[256];
     if (config.rawblksize){
       blkdev_remove(config.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -2600,6 +2645,9 @@ void rollback_ncommits()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -2671,11 +2719,14 @@ void transaction_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -3008,11 +3059,14 @@ void transaction_simple_api_test()
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.purging_interval = 0;
     fconfig.compaction_threshold = 0;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -3153,11 +3207,14 @@ void rollback_prior_to_ops(bool walflush)
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 10;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -3399,6 +3456,9 @@ void snapshot_concurrent_compaction_test()
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -3462,11 +3522,14 @@ void rollback_to_zero_test(bool multi_kv)
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
     fconfig.multi_kv_instances = multi_kv;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -3629,11 +3692,14 @@ void rollback_all_test(bool multi_kv)
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
     fconfig.multi_kv_instances = multi_kv;
-    
+
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
       blkdev_remove(fconfig.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -3818,16 +3884,19 @@ void auto_compaction_snapshots_test()
     config = fdb_get_default_config();
     config.compaction_mode=FDB_COMPACTION_AUTO;
     config.compactor_sleep_duration=1;
-    
+
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
       blkdev_remove(config.rawdevice);
+      sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+      r = system(cmd);
+      (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
     (void)r;
-    
+
     status = fdb_open(&file, "mvcc_test1", &config);
     TEST_CHK(status == FDB_RESULT_SUCCESS);
 
@@ -3921,7 +3990,10 @@ void *rollback_during_ops_test(void * args)
         // remove previous mvcc_test files
         char cmd[256];
         if (config.rawblksize){
-          blkdev_remove(config.rawdevice);
+            blkdev_remove(config.rawdevice);
+            sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+            r = system(cmd);
+            (void)r;
         }
         sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
         r = system(cmd);
@@ -4054,7 +4126,10 @@ void in_memory_snapshot_rollback_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -4122,7 +4197,7 @@ void rollback_drop_multi_files_kvs_test()
     int i, j, r;
     int vb;
     int n = 10;
-    int n_files = 8;
+    int n_files = 4;
     int n_kvs = 128;
     char keybuf[256], bodybuf[256];
     char fname[256];
@@ -4138,11 +4213,14 @@ void rollback_drop_multi_files_kvs_test()
     fconfig.wal_threshold = 1024;
     fconfig.compaction_mode = FDB_COMPACTION_MANUAL;
     fconfig.durability_opt = FDB_DRB_ASYNC;
-    
+
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -4302,7 +4380,10 @@ void tx_crash_recover_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice);
+        sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
+        r = system(cmd);
+        (void)r;
     }
     sprintf(cmd, SHELL_DEL " mvcc_test* > errorlog.txt");
     r = system(cmd);
@@ -4405,9 +4486,8 @@ void tx_crash_recover_test()
 
 
 int main(){
-
-    //rollback_secondary_kvs();
-    //multi_version_test();
+    rollback_secondary_kvs();
+    multi_version_test();
 #ifdef __CRC32
     crash_recovery_test(true);
     crash_recovery_test(false);

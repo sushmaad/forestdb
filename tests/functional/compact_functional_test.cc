@@ -662,6 +662,7 @@ void compact_reopen_with_iterator()
     fconfig.wal_threshold = 1024;
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     fconfig.compaction_threshold = 0;
+    fconfig.rawblksize = 0;
 
     // remove previous compact_test files
     char cmd[256];
@@ -3229,20 +3230,20 @@ int main(){
     compact_upto_twice_test();
     compaction_callback_test();
     compact_wo_reopen_test();
-#endif
-    compact_with_reopen_test();
+    //compact_with_reopen_test();
     compact_reopen_with_iterator();
     compact_reopen_named_kvs();
     estimate_space_upto_test(false); // single kv instance in file
     estimate_space_upto_test(true); // multiple kv instance in file
     auto_recover_compact_ok_test();
     db_compact_overwrite();
+#endif
     db_compact_during_doc_delete(NULL);
     compaction_with_concurrent_transaction_test();
     compaction_with_concurrent_update_test();
-    auto_compaction_with_custom_cmp_function();
-    compaction_daemon_test(20);
-    auto_compaction_with_concurrent_insert_test(20);
+    //auto_compaction_with_custom_cmp_function();
+    //compaction_daemon_test(20);
+    //auto_compaction_with_concurrent_insert_test(20);
 
     return 0;
 }

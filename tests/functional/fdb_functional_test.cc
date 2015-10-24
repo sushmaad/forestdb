@@ -3826,6 +3826,8 @@ void long_key_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
+        //TODO currently long filenames not supported
+        return;
         blkdev_remove(fconfig.rawdevice);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
@@ -3943,6 +3945,7 @@ void open_multi_files_kvs_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
+        n_files = 2;
         blkdev_remove(fconfig.rawdevice);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
@@ -4162,9 +4165,9 @@ int main(){
     api_wrapper_test();
     flush_before_commit_test();
     flush_before_commit_multi_writers_test();
-    //auto_commit_test();
-    //last_wal_flush_header_test();
-    //long_key_test();
+    auto_commit_test();
+    last_wal_flush_header_test();
+    long_key_test();
     large_batch_write_no_commit_test();
     multi_thread_client_shutdown(NULL);
     multi_thread_kvs_client(NULL);
@@ -4172,7 +4175,7 @@ int main(){
     operational_stats_test(false);
     operational_stats_test(true);
     multi_thread_test(40*1024, 1024, 20, 1, 100, 2, 6);
-    //open_multi_files_kvs_test();
+    open_multi_files_kvs_test();
 
     return 0;
 }

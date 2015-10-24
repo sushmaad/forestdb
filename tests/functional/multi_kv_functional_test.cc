@@ -2497,13 +2497,13 @@ int main(){
             multi_kv_test(opt, chunksize);
             multi_kv_iterator_key_test(opt, chunksize);
             multi_kv_iterator_seq_test(opt, chunksize);
-            //multi_kv_txn_test(opt, chunksize);
+            multi_kv_txn_test(opt, chunksize);
             multi_kv_snapshot_test(opt, chunksize);
             multi_kv_rollback_test(opt, chunksize);
         }
     }
-    //multi_kv_custom_cmp_test();
-    //multi_kv_fdb_open_custom_cmp_test();
+    multi_kv_custom_cmp_test();
+    multi_kv_fdb_open_custom_cmp_test();
     multi_kv_use_existing_mode_test();
     multi_kv_close_test();
 

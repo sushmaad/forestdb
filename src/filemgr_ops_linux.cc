@@ -622,7 +622,7 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 ssize_t _blkmgr_linux_pwrite(int fd, void *buf, size_t count, cs_off_t offset)
 {
   ssize_t rv;
-  struct store_ops ops = {WRITE, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
+  struct store_ops ops = {HCDWRITE, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
   rv = store_cmd(fd, &ops);
   if (rv < 0) {
         char errStr[256];
@@ -636,7 +636,7 @@ ssize_t _blkmgr_linux_pwrite(int fd, void *buf, size_t count, cs_off_t offset)
 ssize_t _blkmgr_linux_pread(int fd, void *buf, size_t count, cs_off_t offset)
 {
   ssize_t rv;
-  struct store_ops ops = {READ, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
+  struct store_ops ops = {HCDREAD, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
   rv = store_cmd(fd, &ops);
   if (rv < 0) {
         char errStr[256];

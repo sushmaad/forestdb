@@ -604,7 +604,7 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 
     //TODO remove dummy devname
     fd = store_open(blkdevid, const_cast<char *>(pathname), flags, mode);
-    printf("opening store %s\n", pathname);
+    //printf("opening store %s\n", pathname);
 
     if (fd < 0) {
         char errStr[256];
@@ -704,7 +704,7 @@ int _blkmgr_linux_fsync(int fd)
 int _blkmgr_linux_fsync2(int fd, uint64_t addr)
 {
   int rv = 0;
-  printf("sync done for addr %lu\n", addr);
+//  printf("sync done for addr %lu\n", addr);
   rv = store_sync(fd, addr);
 
   if (rv < 0) {

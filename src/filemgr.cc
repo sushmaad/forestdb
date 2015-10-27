@@ -2039,13 +2039,13 @@ fdb_status filemgr_sync(struct filemgr *file, err_log_callback *log_callback)
            file->rawblksize)) - 2 * file->rawblksize;
       
       while(syncbeginblk < syncendblk){
-        printf("synching blk %lu\n", syncbeginblk);
+    //    printf("synching blk %lu\n", syncbeginblk);
         rv = file->ops->fsyncblk(file->fd, syncbeginblk);
         syncbeginblk += file->rawblksize;
         sync = true;
       }
       if (sync) {
-        printf("last commit %lu\n", syncendblk);
+    //    printf("last commit %lu\n", syncendblk);
         file->prevsyncrawblk = syncendblk - file->rawblksize;
         atomic_store_uint64_t(&file->last_commit, syncendblk);
       }

@@ -59,7 +59,7 @@ void iterator_test()
     // remove  all previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -348,7 +348,7 @@ void iterator_with_concurrent_updates_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -445,7 +445,7 @@ void iterator_compact_uncommitted_db()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -531,7 +531,7 @@ void iterator_seek_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -855,7 +855,7 @@ void iterator_complete_test(int insert_opt, int delete_opt)
 
     if (config.rawblksize) {
         char cmd[256];
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1454,7 +1454,7 @@ void iterator_extreme_key_test()
     kvs_config = fdb_get_default_kvs_config();
     if (config.rawblksize) {
         char cmd[256];
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1588,7 +1588,7 @@ void iterator_no_deletes_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1672,7 +1672,7 @@ void iterator_set_del_docs_test()
     fdb_doc *vdoc;
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1773,7 +1773,7 @@ void iterator_del_next_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1896,7 +1896,7 @@ void sequence_iterator_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2139,7 +2139,7 @@ void sequence_iterator_duplicate_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2258,7 +2258,7 @@ void reverse_sequence_iterator_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2425,7 +2425,7 @@ void reverse_sequence_iterator_kvs_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2631,7 +2631,7 @@ void reverse_iterator_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2812,7 +2812,7 @@ void iterator_seek_wal_only_test()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3067,7 +3067,7 @@ void iterator_after_wal_threshold()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3151,7 +3151,7 @@ void iterator_manual_wal_flush()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3273,7 +3273,7 @@ void iterator_concurrent_compaction()
     // remove previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3363,7 +3363,7 @@ void iterator_offset_access_test()
     // remove  all previous iterator_test files
     if (fconfig.rawblksize) {
         char cmd[256];
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;

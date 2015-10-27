@@ -208,7 +208,8 @@ void multi_file_write_with_inmem_snap(const char *test_name) {
     // remove previous test files
     char cmd[256];
     if (fdb_get_default_config().rawblksize){
-        blkdev_remove(fdb_get_default_config().rawdevice);
+        blkdev_remove(fdb_get_default_config().rawdevice,
+                fdb_get_default_config().rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fdb_get_default_config().rawdevice);
         r = system(cmd);
         (void)r;

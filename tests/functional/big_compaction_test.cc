@@ -153,7 +153,7 @@ void multi_writers(const char *test_name) {
     // remove previous test files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;

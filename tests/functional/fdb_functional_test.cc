@@ -56,7 +56,7 @@ void basic_test()
     // remove previous dummy test files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -312,7 +312,7 @@ void set_get_max_keylen()
     //remove previous dummy file
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -373,7 +373,7 @@ void config_test()
     //remove previous dummy file
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -458,7 +458,7 @@ void deleted_doc_get_api_test()
     //remove previous dummy file
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -556,7 +556,7 @@ void large_batch_write_no_commit_test()
     //remove previous dummy file
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -620,7 +620,7 @@ void set_get_meta_test()
     //remove previous dummy file
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -812,7 +812,7 @@ void seq_tree_exception_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -887,7 +887,7 @@ void seq_tree_exception_test()
 
     // remove previous dummy files
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -969,7 +969,7 @@ void wal_commit_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1077,7 +1077,7 @@ void db_close_and_remove()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1107,7 +1107,7 @@ void db_close_and_remove()
 
     // remove previous dummy files
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1151,7 +1151,7 @@ void db_drop_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1183,7 +1183,7 @@ void db_drop_test()
 
     // Remove the database file manually.
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1263,7 +1263,7 @@ void db_destroy_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1383,7 +1383,7 @@ void operational_stats_test(bool multi_kv)
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1686,7 +1686,7 @@ void multi_thread_test(
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1816,7 +1816,8 @@ void *multi_thread_client_shutdown(void *args)
         // remove previous dummy files
         char cmd[256];
         if (fdb_get_default_config().rawblksize){
-            blkdev_remove(fdb_get_default_config().rawdevice);
+            blkdev_remove(fdb_get_default_config().rawdevice,
+                    fdb_get_default_config().rawblksize);
             sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fdb_get_default_config().rawdevice);
             r = system(cmd);
             (void)r;
@@ -1892,7 +1893,7 @@ void *multi_thread_kvs_client(void *args)
         // remove previous dummy files
         char cmd[256];
         if (fconfig.rawblksize){
-            blkdev_remove(fconfig.rawdevice);
+            blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
             sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
             r = system(cmd);
             (void)r;
@@ -2021,7 +2022,7 @@ void incomplete_block_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2126,7 +2127,7 @@ void custom_compare_primitive_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2254,7 +2255,7 @@ void custom_compare_variable_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2451,7 +2452,7 @@ void custom_compare_commit_compact(bool eqkeys)
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2552,7 +2553,7 @@ void custom_seqnum_test(bool multi_kv)
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2683,7 +2684,7 @@ void doc_compression_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2839,7 +2840,7 @@ void read_doc_by_offset_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2971,7 +2972,7 @@ void purge_logically_deleted_doc_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3119,7 +3120,7 @@ void api_wrapper_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3219,7 +3220,7 @@ void flush_before_commit_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3368,7 +3369,7 @@ void flush_before_commit_multi_writers_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3518,7 +3519,7 @@ void auto_commit_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3604,7 +3605,7 @@ void last_wal_flush_header_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3828,7 +3829,7 @@ void long_key_test()
     if (fconfig.rawblksize){
         //TODO currently long filenames not supported
         return;
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -3946,7 +3947,7 @@ void open_multi_files_kvs_test()
     char cmd[256];
     if (fconfig.rawblksize){
         n_files = 2;
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -4083,7 +4084,7 @@ void get_byoffset_diff_kvs_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;

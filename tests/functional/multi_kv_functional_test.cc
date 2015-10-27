@@ -90,7 +90,7 @@ void multi_kv_test(uint8_t opt, size_t chunksize)
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -505,7 +505,7 @@ void multi_kv_iterator_key_test(uint8_t opt, size_t chunksize)
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -700,7 +700,7 @@ void multi_kv_iterator_seq_test(uint8_t opt, size_t chunksize)
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -954,7 +954,7 @@ void multi_kv_txn_test(uint8_t opt, size_t chunksize)
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1335,7 +1335,7 @@ void multi_kv_snapshot_test(uint8_t opt, size_t chunksize)
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1523,7 +1523,7 @@ void multi_kv_rollback_test(uint8_t opt, size_t chunksize)
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -1828,7 +1828,7 @@ void multi_kv_custom_cmp_test()
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2130,7 +2130,7 @@ void multi_kv_fdb_open_custom_cmp_test()
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2263,7 +2263,7 @@ void multi_kv_use_existing_mode_test()
     // remove previous multi_kv_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -2395,7 +2395,7 @@ void multi_kv_close_test()
     // remove previous multi_kv_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;

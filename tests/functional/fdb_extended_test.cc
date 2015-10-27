@@ -495,7 +495,7 @@ static void test_multi_readers(multi_reader_type reader_type,
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -579,7 +579,7 @@ static void test_writer_multi_readers(writer_type wtype,
 
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -675,7 +675,7 @@ static void test_rollback_multi_readers(multi_reader_type reader_type,
 
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -772,7 +772,7 @@ static void test_rollback_compaction(const char *test_name) {
 
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;

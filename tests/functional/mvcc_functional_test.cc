@@ -49,7 +49,7 @@ void rollback_secondary_kvs()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -124,7 +124,7 @@ void multi_version_test()
     // remove all previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -270,7 +270,7 @@ void crash_recovery_test(bool walflush)
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -418,7 +418,7 @@ void snapshot_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -706,7 +706,7 @@ void snapshot_stats_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -816,7 +816,7 @@ void snapshot_with_uncomitted_data_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+      blkdev_remove(config.rawdevice, config.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
       r = system(cmd);
       (void)r;
@@ -970,7 +970,7 @@ void in_memory_snapshot_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -1174,7 +1174,7 @@ void in_memory_snapshot_on_dirty_hbtrie_test()
     //remove previous mvcc files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+      blkdev_remove(config.rawdevice, config.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
       r = system(cmd);
       (void)r;
@@ -1543,7 +1543,7 @@ void in_memory_snapshot_compaction_test()
     //remove previous mvcc files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+      blkdev_remove(config.rawdevice, config.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
       r = system(cmd);
       (void)r;
@@ -1678,7 +1678,7 @@ void snapshot_clone_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -1989,7 +1989,7 @@ void snapshot_parallel_clone_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -2092,7 +2092,7 @@ void snapshot_markers_in_file_test(bool multi_kv)
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -2251,7 +2251,7 @@ void rollback_forward_seqnum()
     //remove previous mvcc files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -2363,7 +2363,7 @@ void rollback_test(bool multi_kv)
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -2539,7 +2539,7 @@ void rollback_and_snapshot_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+      blkdev_remove(config.rawdevice, config.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
       r = system(cmd);
       (void)r;
@@ -2644,7 +2644,7 @@ void rollback_ncommits()
     //remove previous mvcc files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -2723,7 +2723,7 @@ void transaction_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3063,7 +3063,7 @@ void transaction_simple_api_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3211,7 +3211,7 @@ void rollback_prior_to_ops(bool walflush)
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3455,7 +3455,7 @@ void snapshot_concurrent_compaction_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3526,7 +3526,7 @@ void rollback_to_zero_test(bool multi_kv)
     // remove previous mvcc_test files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3696,7 +3696,7 @@ void rollback_all_test(bool multi_kv)
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-      blkdev_remove(fconfig.rawdevice);
+      blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3888,7 +3888,7 @@ void auto_compaction_snapshots_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-      blkdev_remove(config.rawdevice);
+      blkdev_remove(config.rawdevice, config.rawblksize);
       sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
       r = system(cmd);
       (void)r;
@@ -3990,7 +3990,7 @@ void *rollback_during_ops_test(void * args)
         // remove previous mvcc_test files
         char cmd[256];
         if (config.rawblksize){
-            blkdev_remove(config.rawdevice);
+            blkdev_remove(config.rawdevice, config.rawblksize);
             sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
             r = system(cmd);
             (void)r;
@@ -4126,7 +4126,7 @@ void in_memory_snapshot_rollback_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;
@@ -4217,7 +4217,7 @@ void rollback_drop_multi_files_kvs_test()
     // remove previous dummy files
     char cmd[256];
     if (fconfig.rawblksize){
-        blkdev_remove(fconfig.rawdevice);
+        blkdev_remove(fconfig.rawdevice, fconfig.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", fconfig.rawdevice);
         r = system(cmd);
         (void)r;
@@ -4380,7 +4380,7 @@ void tx_crash_recover_test()
     // remove previous mvcc_test files
     char cmd[256];
     if (config.rawblksize){
-        blkdev_remove(config.rawdevice);
+        blkdev_remove(config.rawdevice, config.rawblksize);
         sprintf(cmd, SHELL_DEL " %s* > errorlog.txt", config.rawdevice);
         r = system(cmd);
         (void)r;

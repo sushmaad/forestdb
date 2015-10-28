@@ -44,7 +44,8 @@ fdb_config get_default_config(void) {
     // Use a synchronous commit by default.
     fconfig.durability_opt = FDB_DRB_NONE;
     fconfig.rawblksize = FDB_RAWBLKSIZE;
-    fconfig.rawdevice = "/dev/nvme0n1";
+    fconfig.rawvolumes = 7;
+    fconfig.rawdevice = "/dev/sdb1";
     fconfig.flags = FDB_OPEN_FLAG_CREATE;
     // 4MB by default.
     fconfig.compaction_buf_maxsize = FDB_COMP_BUF_MINSIZE;

@@ -36,7 +36,6 @@
 using namespace std;
 
 #if !defined(WIN32) && !defined(_WIN32)
-int blkdevid = -1;
 
 int _filemgr_linux_open(const char *pathname, int flags, mode_t mode)
 {
@@ -592,9 +591,11 @@ void _blkmgr_linux_get_errno_str(char *buf, size_t size) {
 
 int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 {
+    int blkdevid = -1;
     int fd;
     char *pri_dev1 = filemgr_get_config()->rawdevice;
-    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize,
+                    filemgr_get_config()->rawvolumes)) < 0)
     {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
@@ -603,14 +604,14 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
     }
 
     //TODO remove dummy devname
-    fd = store_open(blkdevid, const_cast<char *>(pathname), flags, mode);
-    //printf("opening store %s\n", pathname);
+    fd = volume_open(blkdevid, const_cast<char *>(pathname), flags, mode);
+    //printf("opening volume %s\n", pathname);
 
     if (fd < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to open store %s %d, %s\n", pathname, fd, errStr);
-        if (fd == HCD_ERR_STORE_NOT_FOUND) {
+        printf("failed to open volume %s %d, %s\n", pathname, fd, errStr);
+        if (fd == HCD_ERR_VOL_NOT_FOUND) {
             return (int) FDB_RESULT_NO_SUCH_FILE;
         } else {
             return (int) FDB_RESULT_OPEN_FAIL; // LCOV_EXCL_LINE
@@ -622,12 +623,12 @@ int _blkmgr_linux_open(const char *pathname, int flags, mode_t mode)
 ssize_t _blkmgr_linux_pwrite(int fd, void *buf, size_t count, cs_off_t offset)
 {
   ssize_t rv;
-  struct store_ops ops = {HCDWRITE, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
-  rv = store_cmd(fd, &ops);
+  struct volume_ops ops = {VOLWRITE, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
+  rv = volume_cmd(fd, &ops);
   if (rv < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to write into store %d, %s\n", rv, errStr);
+        printf("failed to write into volume %d, %s\n", rv, errStr);
     return (ssize_t) FDB_RESULT_WRITE_FAIL; // LCOV_EXCL_LINE
   }
   return rv;
@@ -636,12 +637,12 @@ ssize_t _blkmgr_linux_pwrite(int fd, void *buf, size_t count, cs_off_t offset)
 ssize_t _blkmgr_linux_pread(int fd, void *buf, size_t count, cs_off_t offset)
 {
   ssize_t rv;
-  struct store_ops ops = {HCDREAD, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
-  rv = store_cmd(fd, &ops);
+  struct volume_ops ops = {VOLREAD, (uint8_t*) buf, (uint32_t)count, (uint64_t)offset};
+  rv = volume_cmd(fd, &ops);
   if (rv < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to read into store %d, %s\n", rv, errStr);
+        printf("failed to read into volume %d, %s\n", rv, errStr);
     return (ssize_t) FDB_RESULT_READ_FAIL; // LCOV_EXCL_LINE
   }
   return rv;
@@ -649,22 +650,22 @@ ssize_t _blkmgr_linux_pread(int fd, void *buf, size_t count, cs_off_t offset)
 
 ssize_t _blkmgr_linux_getblk(int fd, uint64_t addr)
 {
-  return store_getblk(fd, addr);
+  return volume_getblk(fd, addr);
 }
 
 int _blkmgr_linux_changemode(int fd, int flags)
 {
-  return store_mode_change(fd, flags);
+  return volume_mode_change(fd, flags);
 }
 
 int _blkmgr_linux_close(int fd)
 {
-    int rv = store_close(fd);
+    int rv = volume_close(fd);
 
     if (rv < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to close store %d, %s\n", rv, errStr);
+        printf("failed to close volume %d, %s\n", rv, errStr);
         return FDB_RESULT_CLOSE_FAIL; // LCOV_EXCL_LINE
     }
 
@@ -673,7 +674,7 @@ int _blkmgr_linux_close(int fd)
 
 cs_off_t _blkmgr_linux_goto_eof(int fd)
 {
-    cs_off_t rv = store_offset(fd);
+    cs_off_t rv = volume_offset(fd);
     if (rv < 0) {
         return (cs_off_t) FDB_RESULT_SEEK_FAIL; // LCOV_EXCL_LINE
     }
@@ -683,15 +684,18 @@ cs_off_t _blkmgr_linux_goto_eof(int fd)
 // LCOV_EXCL_START
 cs_off_t _blkmgr_linux_file_size(const char *filename)
 {
+    int blkdevid = -1;
     char *pri_dev1 = filemgr_get_config()->rawdevice;
-    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize,
+                    filemgr_get_config()->rawvolumes)) < 0)
     {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to init bld device %d, %s\n", blkdevid, errStr);
         return FDB_RESULT_OPEN_FAIL;
     }
-  return store_size(blkdevid, filename);
+  return volume_size(blkdevid, filename);
 
 }
 // LCOV_EXCL_STOP
@@ -705,7 +709,7 @@ int _blkmgr_linux_fsync2(int fd, uint64_t addr)
 {
   int rv = 0;
 //  printf("sync done for addr %lu\n", addr);
-  rv = store_sync(fd, addr);
+  rv = volume_sync(fd, addr);
 
   if (rv < 0) {
     printf("error in fynscblk for addr %lu addr error %d\n", addr, rv);
@@ -752,7 +756,7 @@ int _blkmgr_linux_get_fs_type(int src_fd)
 {
     int ret;
     int flags;
-    ret = get_store_type(src_fd, &flags);
+    ret = get_volume_type(src_fd, &flags);
     if (ret < 0) {
         return FDB_RESULT_INVALID_ARGS;
     }
@@ -765,15 +769,18 @@ int _blkmgr_linux_get_fs_type(int src_fd)
 
 bool _blkmgr_linux_does_file_exist(const char *filename)
 {
+    int blkdevid = -1;
     char *pri_dev1 = filemgr_get_config()->rawdevice;
-    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize,
+                    filemgr_get_config()->rawvolumes)) < 0)
     {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to init bld device %d, %s\n", blkdevid, errStr);
         return FDB_RESULT_OPEN_FAIL;
     }
-    return store_exist(blkdevid, filename);
+    return volume_exist(blkdevid, filename);
 }
 
 int _blkmgr_linux_copy_file_range(int fs_type,
@@ -810,77 +817,81 @@ void _blkmgr_linux_get_dir_n_prefix(const char *filename, char *dirname, char *p
 
 fdb_status _blkmgr_linux_search_n_destroy(const char *filename, char *dirname, char *prefix)
 {
+    int blkdevid = -1;
   fdb_status fs = FDB_RESULT_SUCCESS;
-  char **store_names=(char **)malloc(32* sizeof(char *));
+  char **volume_names=(char **)malloc(32* sizeof(char *));
   for(int i=0;i<32;i++){
-    store_names[i]=(char *)malloc(256 * sizeof(char));
+    volume_names[i]=(char *)malloc(256 * sizeof(char));
   }
-  int *store_remain;  // remaining stores number
+  int *volume_remain;  // remaining volumes number
   int remaining=0;
-  store_remain=&remaining;
-  int store_max=32;
-  int store_count=0; // Found stores number
+  volume_remain=&remaining;
+  int volume_max=32;
+  int volume_count=0; // Found volumes number
 
   char *pri_dev = filemgr_get_config()->rawdevice;
   //TODO remove hard coding
-  if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
+  if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize,
+                  filemgr_get_config()->rawvolumes)) < 0)
   {
       char errStr[256];
       _blkmgr_linux_get_errno_str(errStr, 256);
       printf("failed to init blk dev %d, %s\n", blkdevid, errStr);
       return FDB_RESULT_OPEN_FAIL;
   }
-  store_count = blkdev_storenames(blkdevid, store_names, store_max, store_remain);
+  volume_count = blkdev_volumenames(blkdevid, volume_names, volume_max, volume_remain);
 
-  if (store_count < 0) {
+  if (volume_count < 0) {
       char errStr[256];
       _blkmgr_linux_get_errno_str(errStr, 256);
-      printf("failed to get storename of %s %s\n", filename, errStr);
+      printf("failed to get volumename of %s %s\n", filename, errStr);
   }
-  else if (store_count == 0) {
+  else if (volume_count == 0) {
       char errStr[256];
       _blkmgr_linux_get_errno_str(errStr, 256);
-      printf("No store in %s %s\n", filename, errStr);
+      printf("No volume in %s %s\n", filename, errStr);
   }
 
   if (remaining > 0) {
       char errStr[256];
       _blkmgr_linux_get_errno_str(errStr, 256);
-      printf("Still %d store left unsearched in %s %s\n", remaining,filename, errStr);
+      printf("Still %d volume left unsearched in %s %s\n", remaining,filename, errStr);
   }
 
-  for(int i=0;i<store_count;i++){
-      if (!strncmp(store_names[i], prefix, strlen(prefix))) {
+  for(int i=0;i<volume_count;i++){
+      if (!strncmp(volume_names[i], prefix, strlen(prefix))) {
           // Need to check filemgr for possible open entry?
-          if (store_remove(blkdevid, store_names[i])) {
+          if (volume_remove(blkdevid, volume_names[i])) {
               fs = FDB_RESULT_FILE_REMOVE_FAIL;
               return fs;
           }
       }
 
   }
-  free(store_names);
+  free(volume_names);
   return fs;
 }
 
 int _blkmgr_linux_remove(const char *filename)
 {
+    int blkdevid = -1;
     char *pri_dev1 = filemgr_get_config()->rawdevice;
-    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize)) < 0)
+    if ((blkdevid = blkdev_init(pri_dev1, filemgr_get_config()->rawblksize,
+                    filemgr_get_config()->rawvolumes)) < 0)
     {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to init bld device %d, %s\n", blkdevid, errStr);
         return FDB_RESULT_OPEN_FAIL;
     }
-    size_t rc = store_remove(blkdevid, filename);
+    size_t rc = volume_remove(blkdevid, filename);
     fdb_status fs = FDB_RESULT_SUCCESS;
     if (rc < 0) {
         switch (rc){
             case HCD_ERR_INVALID_INPUT:
                 fs = FDB_RESULT_INVALID_ARGS;
                 break;
-      case HCD_ERR_STORE_NOT_FOUND:
+      case HCD_ERR_VOL_NOT_FOUND:
         fs =  FDB_RESULT_NO_SUCH_FILE;
         break;
       default:
@@ -893,46 +904,48 @@ int _blkmgr_linux_remove(const char *filename)
 
 void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, char *prefix, int *compaction_no, int *max_compaction_no)
 {
-    char **store_names=(char **)malloc(32* sizeof(char *));
+    int blkdevid = -1;
+    char **volume_names=(char **)malloc(32* sizeof(char *));
     for(int i=0;i<32;i++){
-	store_names[i]=(char *)malloc(256 * sizeof(char));
+	volume_names[i]=(char *)malloc(256 * sizeof(char));
     }
-    int *store_remain;  // remaining stores number
+    int *volume_remain;  // remaining volumes number
     int remaining=0;
-    store_remain=&remaining;
-    int store_max=32;
-    int store_count=0; // Found stores number
+    volume_remain=&remaining;
+    int volume_max=32;
+    int volume_count=0; // Found volumes number
 
     char *pri_dev = filemgr_get_config()->rawdevice;
-    if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize)) < 0)
+    if ((blkdevid = blkdev_init(pri_dev, filemgr_get_config()->rawblksize,
+                    filemgr_get_config()->rawvolumes)) < 0)
     {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
         printf("failed to init block device %d, %s\n", blkdevid, errStr);
         return;
     }
-    store_count = blkdev_storenames(blkdevid, store_names, store_max, store_remain);
-    if (store_count < 0) {
+    volume_count = blkdev_volumenames(blkdevid, volume_names, volume_max, volume_remain);
+    if (volume_count < 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("failed to get storename of %s %s\n", filename, errStr);
+        printf("failed to get volumename of %s %s\n", filename, errStr);
     }
-    else if (store_count == 0) {
+    else if (volume_count == 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("No store in %s %s\n", filename, errStr);
+        printf("No volume in %s %s\n", filename, errStr);
     }
 
     if (remaining > 0) {
         char errStr[256];
         _blkmgr_linux_get_errno_str(errStr, 256);
-        printf("Still %d stores left unsearched in %s %s\n", remaining, filename, errStr);
+        printf("Still %d volumes left unsearched in %s %s\n", remaining, filename, errStr);
     }
 
-    for(int i=0;i<store_count;i++){
-        if (!strncmp(store_names[i], prefix, strlen(prefix))) {
+    for(int i=0;i<volume_count;i++){
+        if (!strncmp(volume_names[i], prefix, strlen(prefix))) {
             *compaction_no = -1;
-            sscanf(store_names[i] + strlen(prefix), "%d", compaction_no);
+            sscanf(volume_names[i] + strlen(prefix), "%d", compaction_no);
             if (*compaction_no >= 0) {
                 if (*compaction_no > *max_compaction_no) {
                     *max_compaction_no = *compaction_no;
@@ -940,7 +953,7 @@ void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, cha
             }
         }
     }
-    free(store_names);
+    free(volume_names);
 
 }
 struct filemgr_ops linux_blk_ops = {

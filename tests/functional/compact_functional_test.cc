@@ -397,7 +397,7 @@ void compact_with_reopen_test()
     fdb_close(dbfile);
 
     if (fconfig.rawblksize){
-        store_move(fconfig.rawdevice, file2, file1);
+        volume_move(fconfig.rawdevice, file2, file1);
     } else{
       r = system(SHELL_MOVE " compact_test2 compact_test1 > errorlog.txt");
       (void)r;
@@ -504,7 +504,7 @@ void compact_with_reopen_test()
     fdb_close(dbfile);
 
     if (!fconfig.rawblksize){
-        store_move(fconfig.rawdevice, file1, file3);
+        volume_move(fconfig.rawdevice, file1, file3);
     } else {
         r = system(SHELL_MOVE " compact_test1 compact_test.fdb > errorlog.txt");
         (void)r;

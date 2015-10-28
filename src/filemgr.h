@@ -51,6 +51,7 @@ extern "C" {
 
 struct filemgr_config {
     uint32_t rawblksize;
+    uint32_t rawvolumes;
     char rawdevice[256];
     int blocksize;
     int ncacheblock;
@@ -163,6 +164,7 @@ struct filemgr {
     uint16_t filename_len;
     uint32_t blocksize;
     uint32_t rawblksize;
+    uint32_t rawvolumes;
     char* rawdevice[256];
     int fd;
     atomic_uint64_t pos;

@@ -865,7 +865,6 @@ int main() {
                               DAEMON_COMPACTION,
                               "test a single writer, a compaction daemon, "
                               "and multi mixed readers");
-
     // Execute a transactional writer with a manual compaction and
     // multiple readers together.
     test_writer_multi_readers(TRANSACTIONAL_WRITER, MULTI_READERS,
@@ -901,6 +900,5 @@ int main() {
     test_rollback_multi_readers(MULTI_MIXED_READERS,
                                 "test a rollback and multi mixed readers");
     test_rollback_compaction("test concurrent rollback and compaction");
-
     return 0;
 }

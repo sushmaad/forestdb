@@ -1187,6 +1187,7 @@ static void _fdb_init_file_config(const fdb_config *config,
     struct filemgr_config *fconfig) {
   fconfig->blocksize = config->blocksize;
   fconfig->rawblksize = config->rawblksize;
+  fconfig->rawvolumes = config->rawvolumes;
   memcpy(fconfig->rawdevice, config->rawdevice, strlen(config->rawdevice) + 1);
   fconfig->ncacheblock = config->buffercache_size / config->blocksize;
   fconfig->chunksize = config->chunksize;
@@ -5508,6 +5509,7 @@ static fdb_status _fdb_reset(fdb_kvs_handle *handle, fdb_kvs_handle *handle_in)
     // set filemgr configuration
     fconfig.blocksize = handle->config.blocksize;
     fconfig.rawblksize = handle->config.rawblksize;
+    fconfig.rawvolumes = handle->config.rawvolumes;
     fconfig.ncacheblock = handle->config.buffercache_size / handle->config.blocksize;
     fconfig.chunksize = handle->config.chunksize;
     fconfig.options = FILEMGR_CREATE;
@@ -5599,6 +5601,7 @@ fdb_status fdb_compact_file(fdb_file_handle *fhandle,
     _fdb_init_file_config(&handle->config, &fconfig);
     fconfig.blocksize = handle->config.blocksize;
     fconfig.rawblksize = handle->config.rawblksize;
+    fconfig.rawvolumes = handle->config.rawvolumes;
     fconfig.ncacheblock = handle->config.buffercache_size / handle->config.blocksize;
     fconfig.chunksize = handle->config.chunksize;
     fconfig.options = FILEMGR_CREATE;

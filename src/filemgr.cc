@@ -611,7 +611,7 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     int fd = -1;
     fdb_status status;
     filemgr_open_result result = {NULL, FDB_RESULT_OPEN_FAIL};
-  
+
     filemgr_init(config);
     // check whether file is already opened or not
     query.filename = filename;
@@ -722,6 +722,7 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     file->ops = ops;
     file->blocksize = global_config.blocksize;
     file->rawblksize = global_config.rawblksize;
+    file->rawvolumes = global_config.rawvolumes;
     memcpy(file->rawdevice, global_config.rawdevice,
             strlen(global_config.rawdevice) + 1);
     atomic_init_uint8_t(&file->status, FILE_NORMAL);
@@ -729,6 +730,7 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
     *file->config = *config;
     file->config->blocksize = global_config.blocksize;
     file->config->rawblksize = global_config.rawblksize;
+    file->config->rawvolumes = global_config.rawvolumes;
     memcpy(file->config->rawdevice, global_config.rawdevice,
             strlen(global_config.rawdevice) + 1);
     file->config->ncacheblock = global_config.ncacheblock;
@@ -1479,7 +1481,7 @@ bid_t filemgr_alloc(struct filemgr *file, err_log_callback *log_callback)
   if(file->rawblksize && !(atomic_get_uint64_t(&file->pos) % file->rawblksize)) {
     file->ops->getblk(file->fd, atomic_get_uint64_t(&file->pos));
   }
-  
+
   atomic_add_uint64_t(&file->pos, file->blocksize);
 
 
@@ -2037,7 +2039,7 @@ fdb_status filemgr_sync(struct filemgr *file, err_log_callback *log_callback)
       int64_t syncendblk = (atomic_get_uint64_t(&file->pos) -
           (atomic_get_uint64_t(&file->pos) %
            file->rawblksize)) - 2 * file->rawblksize;
-      
+
       while(syncbeginblk < syncendblk){
     //    printf("synching blk %lu\n", syncbeginblk);
         rv = file->ops->fsyncblk(file->fd, syncbeginblk);
@@ -2278,6 +2280,7 @@ fdb_status filemgr_destroy_file(char *filename,
         file->fd = file->ops->open(file->filename, O_RDWR, 0666);
         file->blocksize = global_config.blocksize;
         file->rawblksize = global_config.rawblksize;
+        file->rawvolumes = global_config.rawvolumes;
         file->config = NULL;
         if (file->fd < 0) {
             if (file->fd != FDB_RESULT_NO_SUCH_FILE) {

@@ -326,10 +326,14 @@ typedef struct {
      */
     fdb_durability_opt_t durability_opt;
     /**
-      *If set to true ForestDB works directly on raw block device
-      *instead of file system
+      *If set to value other than 0 ForestDB works directly on raw block device
+      *instead of file system with block size of the device equal to rawblksize
       */
     uint32_t rawblksize;
+    /**
+      *number of volumes created on the raw device, equivalent to files
+      */
+    uint32_t rawvolumes;
     char *rawdevice;
     /**
      * Flags for fdb_open API. It can be used for specifying read-only mode.

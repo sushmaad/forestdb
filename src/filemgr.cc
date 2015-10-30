@@ -1206,7 +1206,13 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                 // 4) User opens DB file using its original name 'A', not 'A.1'.
                 // 5) Old file 'A' is opened, and then background thread deletes 'A'.
                 // 6) Crash!
-                remove(file->filename);
+                struct filemgr_ops *ops;
+                ops = get_filemgr_ops();
+                int t_remove;
+                printf("Yangyang:  filemgr_close remove %s\n",file->filename);
+                t_remove=ops->remove(file->filename);
+               // remove(file->filename);
+ 
                 foreground_deletion = true;
             }
 
@@ -2184,7 +2190,13 @@ void filemgr_remove_pending(struct filemgr *old_file, struct filemgr *new_file)
 
         if (!lazy_file_deletion_enabled ||
             (old_file->new_file && old_file->new_file->in_place_compaction)) {
-            remove(old_file->filename);
+               struct filemgr_ops *ops;
+               ops = get_filemgr_ops();
+               int t_remove;
+               printf("Yangyang: filemgr_remove_pending %s\n",old_file->filename);
+               t_remove=ops->remove(old_file->filename);
+ 
+
         }
         filemgr_remove_file(old_file);
         // LCOV_EXCL_STOP

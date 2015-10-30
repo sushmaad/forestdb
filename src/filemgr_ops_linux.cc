@@ -798,7 +798,7 @@ void _blkmgr_linux_get_dir_n_prefix(const char *filename, char *dirname, char *p
 
     filename_len = strlen(filename);
     dirname_len = 0;
-    for (i=filename_len-1; i>=0; --i){
+/*    for (i=filename_len-1; i>=0; --i){
         if (filename[i] == '/') {
             dirname_len = i+1;
             break;
@@ -811,6 +811,7 @@ void _blkmgr_linux_get_dir_n_prefix(const char *filename, char *dirname, char *p
     } else {
         strcpy(dirname, ".");
     }
+*/
     strcpy(prefix, filename + dirname_len);
     strcat(prefix, ".");
 }

@@ -503,7 +503,7 @@ void compact_with_reopen_test()
     fdb_kvs_close(db);
     fdb_close(dbfile);
 
-    if (!fconfig.rawblksize){
+    if (fconfig.rawblksize){
         volume_move(fconfig.rawdevice, file1, file3);
     } else {
         r = system(SHELL_MOVE " compact_test1 compact_test.fdb > errorlog.txt");

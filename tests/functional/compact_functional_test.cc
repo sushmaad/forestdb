@@ -483,7 +483,7 @@ void compact_with_reopen_test()
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     fdb_get_file_info(dbfile, &info);
     // The actual file name should be a compacted one.
-    //TEST_CHK(!strcmp("./compact_test1.3", info.filename));
+    TEST_CHK(!strcmp("./compact_test1.3", info.filename));
 
     fdb_kvs_close(second_dbh);
     fdb_close(second_dbfile);
@@ -527,8 +527,8 @@ void compact_with_reopen_test()
                                   (void *) "compact_with_reopen_test");
     TEST_CHK(status == FDB_RESULT_SUCCESS);
     fdb_get_file_info(dbfile, &info);
-    //TEST_CHK(!strcmp(file3, info.filename));
-    //TEST_CHK(info.doc_count == 100);
+//    TEST_CHK(!strcmp(file3, info.filename));
+    TEST_CHK(info.doc_count == 100);
 
     // free all documents
     for (i=0;i<n;++i){

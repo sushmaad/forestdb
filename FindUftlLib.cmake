@@ -2,7 +2,7 @@
 
 IF (UNIX)
     FIND_LIBRARY(UFTL_LIBRARIES
-          PATH_SUFFIXES uftl
+          #PATH_SUFFIXES uftl
                  NAMES uftl
                  PATHS
                      /usr/lib/)

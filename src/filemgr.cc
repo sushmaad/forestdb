@@ -33,6 +33,7 @@
 #include "list.h"
 #include "fdb_internal.h"
 #include "time_utils.h"
+#include <uftl/hcd.h>
 
 #include "memleak.h"
 
@@ -1209,7 +1210,6 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                 struct filemgr_ops *ops;
                 ops = get_filemgr_ops();
                 int t_remove;
-                printf("Yangyang:  filemgr_close remove %s\n",file->filename);
                 t_remove=ops->remove(file->filename);
                // remove(file->filename);
  
@@ -1260,14 +1260,23 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                         is_file_removed(orig_file_name)) {
                         // If background file removal is not done yet, we postpone
                         // file renaming at this time.
-                        if (rename(file->filename, orig_file_name) < 0) {
-                            // Note that the renaming failure is not a critical
-                            // issue because the last compacted file will be automatically
-                            // identified and opened in the next fdb_open call.
-                            _log_errno_str(file->ops, log_callback, FDB_RESULT_FILE_RENAME_FAIL,
+       //                 fdb_config fconfig = fdb_get_default_config();
+			if (file->config->rawblksize){
+        			if(volume_move(file->config->rawdevice, file->filename,orig_file_name)<0){
+                            	_log_errno_str(file->ops, log_callback, FDB_RESULT_FILE_RENAME_FAIL,
                                            "CLOSE", file->filename);
-                        }
-                    }
+    				}
+			}
+			else if(!file->config->rawblksize){ 
+                        	if (rename(file->filename, orig_file_name) < 0) {
+                            	// Note that the renaming failure is not a critical
+                            	// issue because the last compacted file will be automatically
+                            	// identified and opened in the next fdb_open call.
+                            	_log_errno_str(file->ops, log_callback, FDB_RESULT_FILE_RENAME_FAIL,
+                                           "CLOSE", file->filename);
+                    	    	}	
+                    	}
+		     }	
                 }
                 spin_unlock(&file->lock);
                 // Clean up global hash table, WAL index, and buffer cache.
@@ -2193,7 +2202,6 @@ void filemgr_remove_pending(struct filemgr *old_file, struct filemgr *new_file)
                struct filemgr_ops *ops;
                ops = get_filemgr_ops();
                int t_remove;
-               printf("Yangyang: filemgr_remove_pending %s\n",old_file->filename);
                t_remove=ops->remove(old_file->filename);
  
 

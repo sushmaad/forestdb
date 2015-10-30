@@ -6421,7 +6421,7 @@ fdb_status _fdb_close(fdb_kvs_handle *handle)
 
     btreeblk_end(handle->bhandle);
     btreeblk_free(handle->bhandle);
-
+ 
     fs = filemgr_close(handle->file, handle->config.cleanup_cache_onclose,
                                   handle->filename, &handle->log_callback);
     if (fs != FDB_RESULT_SUCCESS) {

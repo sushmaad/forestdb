@@ -2053,18 +2053,29 @@ fdb_status filemgr_sync(struct filemgr *file, err_log_callback *log_callback)
         if (file->prevsyncrawblk < 0) {
             file->prevsyncrawblk = 0;
         }
-        int64_t syncbeginblk = file->prevsyncrawblk;
+        int64_t syncbeginblk = file->prevsyncrawblk - (file->prevsyncrawblk %
+                file->rawblksize);
         int64_t syncendblk = (atomic_get_uint64_t(&file->pos) -
                 (atomic_get_uint64_t(&file->pos) %
                  file->rawblksize)) - 2 * file->rawblksize;
 
-        if (atomic_get_uint64_t(&file->last_commit) > file->prevsyncrawblk){
-            syncendblk = atomic_get_uint64_t(&file->last_commit);
+        if (atomic_get_uint64_t(&file->last_commit) > syncendblk){
+            syncendblk = atomic_get_uint64_t(&file->last_commit) -
+                (atomic_get_uint64_t(&file->last_commit) %
+                 file->rawblksize);
         }
         int count = syncendblk - syncbeginblk;
         if (count > 0) {
-            file->prevsyncrawblk = syncendblk;
-            atomic_store_uint64_t(&file->last_commit, syncendblk);
+            /*printf("syncbeginblk %lu\n", syncbeginblk);
+            printf("syncendblk %lu\n", syncendblk);
+            printf("last commit %lu\n",
+                    atomic_get_uint64_t(&file->last_commit));*/
+            if (atomic_get_uint64_t(&file->last_commit) == file->prevsyncrawblk) {
+                atomic_store_uint64_t(&file->last_commit, syncendblk);
+                file->prevsyncrawblk = syncendblk;
+            } else {
+                file->prevsyncrawblk = atomic_get_uint64_t(&file->last_commit);
+            }
         }
         spin_unlock(&file->lock);
 
@@ -2073,7 +2084,6 @@ fdb_status filemgr_sync(struct filemgr *file, err_log_callback *log_callback)
             rv = file->ops->fsyncblk(file->fd, syncbeginblk);
             syncbeginblk += file->rawblksize;
         }
-        //printf("last commit %lu\n", syncendblk);
     }
     _log_errno_str(file->ops, log_callback, (fdb_status)rv, "FSYNC", file->filename);
     return (fdb_status) rv;

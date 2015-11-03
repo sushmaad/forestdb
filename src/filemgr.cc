@@ -1212,7 +1212,7 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                 int t_remove;
                 t_remove=ops->remove(file->filename);
                // remove(file->filename);
- 
+
                 foreground_deletion = true;
             }
 
@@ -1267,16 +1267,16 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                                            "CLOSE", file->filename);
     				}
 			}
-			else if(!file->config->rawblksize){ 
+			else if(!file->config->rawblksize){
                         	if (rename(file->filename, orig_file_name) < 0) {
                             	// Note that the renaming failure is not a critical
                             	// issue because the last compacted file will be automatically
                             	// identified and opened in the next fdb_open call.
                             	_log_errno_str(file->ops, log_callback, FDB_RESULT_FILE_RENAME_FAIL,
                                            "CLOSE", file->filename);
-                    	    	}	
+                    	    	}
                     	}
-		     }	
+		     }
                 }
                 spin_unlock(&file->lock);
                 // Clean up global hash table, WAL index, and buffer cache.
@@ -2049,23 +2049,26 @@ fdb_status filemgr_sync(struct filemgr *file, err_log_callback *log_callback)
     if (!file->rawblksize) {
       rv = file->ops->fsync(file->fd);
     } else {
-      bool sync = false;
-      int64_t syncbeginblk = file->prevsyncrawblk + file->rawblksize;
-      int64_t syncendblk = (atomic_get_uint64_t(&file->pos) -
-          (atomic_get_uint64_t(&file->pos) %
-           file->rawblksize)) - 2 * file->rawblksize;
+        if (file->prevsyncrawblk < 0) {
+            file->prevsyncrawblk = 0;
+        }
+        bool sync = false;
+        int64_t syncbeginblk = file->prevsyncrawblk;
+        int64_t syncendblk = (atomic_get_uint64_t(&file->pos) -
+                (atomic_get_uint64_t(&file->pos) %
+                 file->rawblksize)) - 2 * file->rawblksize;
 
-      while(syncbeginblk < syncendblk){
-    //    printf("synching blk %lu\n", syncbeginblk);
-        rv = file->ops->fsyncblk(file->fd, syncbeginblk);
-        syncbeginblk += file->rawblksize;
-        sync = true;
-      }
-      if (sync) {
-    //    printf("last commit %lu\n", syncendblk);
-        file->prevsyncrawblk = syncendblk - file->rawblksize;
-        atomic_store_uint64_t(&file->last_commit, syncendblk);
-      }
+        while(syncbeginblk < syncendblk){
+            //printf("synching blk %lu\n", syncbeginblk);
+            rv = file->ops->fsyncblk(file->fd, syncbeginblk);
+            syncbeginblk += file->rawblksize;
+            sync = true;
+        }
+        if (sync) {
+            //printf("last commit %lu\n", syncendblk);
+            file->prevsyncrawblk = syncendblk;
+            atomic_store_uint64_t(&file->last_commit, syncendblk);
+        }
     }
     _log_errno_str(file->ops, log_callback, (fdb_status)rv, "FSYNC", file->filename);
     return (fdb_status) rv;
@@ -2203,7 +2206,7 @@ void filemgr_remove_pending(struct filemgr *old_file, struct filemgr *new_file)
                ops = get_filemgr_ops();
                int t_remove;
                t_remove=ops->remove(old_file->filename);
- 
+
 
         }
         filemgr_remove_file(old_file);

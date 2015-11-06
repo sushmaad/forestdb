@@ -1373,6 +1373,7 @@ fdb_status _fdb_open(fdb_kvs_handle *handle,
         strcpy(actual_filename, filename);
     }
 
+    printf("actual_filename is %s\n",actual_filename);
     if ( config->compaction_mode == FDB_COMPACTION_MANUAL ||
          (config->compaction_mode == FDB_COMPACTION_AUTO   &&
           filename_mode == FDB_VFILENAME) ) {

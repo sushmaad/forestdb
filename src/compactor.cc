@@ -728,6 +728,7 @@ struct compactor_meta * _compactor_read_metafile(char *metafile,
     fd_meta = ops->open(metafile, O_RDONLY, 0644);
 
     if (fd_meta >= 0) {
+	printf("you can open the metafile\n");
         // metafile exists .. read metadata
         ret = ops->pread(fd_meta, buf, sizeof(struct compactor_meta), 0);
         if (ret < 0 || (size_t)ret < sizeof(struct compactor_meta)) {
@@ -745,10 +746,12 @@ struct compactor_meta * _compactor_read_metafile(char *metafile,
             }
             return NULL;
         }
+	printf("after open metafile, read the data successfully\n");
         memcpy(&meta, buf, sizeof(struct compactor_meta));
         meta.version = _endian_decode(meta.version);
         meta.crc = _endian_decode(meta.crc);
         ops->close(fd_meta);
+	printf("after read metafile, close the metafile successfully\n");
 
         // CRC check, mode UNKNOWN means all modes are checked.
         if (perform_integrity_check(buf,
@@ -759,8 +762,12 @@ struct compactor_meta * _compactor_read_metafile(char *metafile,
                     "Checksum mismatch in the meta file '%s'\n", metafile);
             return NULL;
         }
+	printf("check the fullpath %s\n", fullpath);
         // check if the file exists
         _reconstruct_path(fullpath, metafile, meta.filename);
+    	struct filemgr_ops *ops;
+
+ 	ops = get_filemgr_ops();
         fd_db = ops->open(fullpath, O_RDONLY, 0644);
         if (fd_db < 0) {
             // file doesn't exist
@@ -768,6 +775,7 @@ struct compactor_meta * _compactor_read_metafile(char *metafile,
         }
         ops->close(fd_db);
     } else {
+	printf("file name does not exist?\n");
         // file doesn't exist
         return NULL;
     }
@@ -788,8 +796,9 @@ static fdb_status _compactor_store_metafile(char *metafile,
 
     ops = get_filemgr_meta_ops();
     fd_meta = ops->open(metafile, O_RDWR | O_CREAT, 0644);
-
+    printf("_compactor_store_metafile in %s\n",metafile);
     if (fd_meta >= 0){
+    	printf("_compactor_store_metafile: open successfully\n");
         meta.version = _endian_encode(COMPACTOR_META_VERSION);
         strcpy(meta.filename, metadata->filename);
         crc = get_checksum(reinterpret_cast<const uint8_t*>(&meta),
@@ -806,6 +815,7 @@ static fdb_status _compactor_store_metafile(char *metafile,
             ops->close(fd_meta);
             return FDB_RESULT_WRITE_FAIL;
         }
+    	printf("_compactor_store_metafile: write successfully\n");
         ret = ops->fsync(fd_meta);
         if (ret < 0) {
             ops->get_errno_str(errno_msg, 512);
@@ -815,7 +825,9 @@ static fdb_status _compactor_store_metafile(char *metafile,
             ops->close(fd_meta);
             return FDB_RESULT_FSYNC_FAIL;
         }
+    	printf("_compactor_store_metafile: fsync successfully\n");
         ops->close(fd_meta);
+    	printf("_compactor_store_metafile: close successfully\n");
     } else {
         return FDB_RESULT_OPEN_FAIL;
     }
@@ -892,19 +904,21 @@ fdb_status compactor_get_actual_filename(const char *filename,
 
     // get actual filename from metafile
     sprintf(path, "%s.meta", filename);
+    printf("matafile name is %s\n",path);
     meta_ptr = _compactor_read_metafile(path, &meta, log_callback);
     if (meta_ptr == NULL) {
         if (comp_mode == FDB_COMPACTION_MANUAL && does_file_exist(filename)) {
             strcpy(actual_filename, filename);
             return FDB_RESULT_SUCCESS;
         }
+	printf("metafile read fail need to update compaction_no\n");
         // error handling .. scan directory
         // backward search until find the first '/' or '\' (Windows)
 
         ops->update_compaction_no(filename,dirname,prefix,&compaction_no, &max_compaction_no);
         // Windows
 
-
+	printf("max_compaction_no is %d\n",max_compaction_no);
 
         if (max_compaction_no < 0) {
             if (comp_mode == FDB_COMPACTION_AUTO) {

@@ -423,7 +423,10 @@ void * compactor_thread(void *voidargs)
                 elem->removal_activated = true;
 
                 mutex_unlock(&cpt_lock);
-                ret = remove(elem->file->filename);
+                struct filemgr_ops *ops;
+                ops = get_filemgr_ops();
+                ret=ops->remove(elem->file->filename);
+
                 filemgr_remove_all_buffer_blocks(elem->file);
                 mutex_lock(&cpt_lock);
 
@@ -532,7 +535,11 @@ void compactor_shutdown()
 
         if (_compactor_check_file_removal(elem)) {
             // remove file if removal is pended.
-            remove(elem->file->filename);
+       //     remove(elem->file->filename);
+                int ret;
+                struct filemgr_ops *ops;
+                ops = get_filemgr_ops();
+                ret=ops->remove(elem->file->filename);
             filemgr_free_func(&elem->file->e);
         }
 

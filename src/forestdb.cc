@@ -44,6 +44,7 @@
 #include "memleak.h"
 #include "time_utils.h"
 #include "system_resource_stats.h"
+#include <uftl/hcd.h>
 
 #ifdef __DEBUG
 #ifndef __DEBUG_FDB
@@ -6313,12 +6314,31 @@ fdb_status fdb_switch_compaction_mode(fdb_file_handle *fhandle,
                 return fs;
             }
             sprintf(metafile, "%s.meta", vfilename);
-            if ((ret = remove(metafile)) < 0) {
+//            struct filemgr_ops *ops;
+//            ops = get_filemgr_meta_ops();
+
+ //   ops = get_filemgr_ops();
+ //       ops = get_filemgr_meta_ops();
+ //           fd_meta = ops->open(metafile, O_RDONLY, 0644);
+ //           	
+            if ((ret=remove(metafile))<0) {
                 return FDB_RESULT_FILE_REMOVE_FAIL;
             }
-            if ((ret = rename(filename, vfilename)) < 0) {
+	    if (handle->file->config->rawblksize){
+		if(volume_move(handle->file->config->rawdevice,filename, vfilename)<0){
+			return FDB_RESULT_FILE_RENAME_FAIL;
+		}
+	    }
+	    else if(!handle->file->config->rawblksize){
+		if (rename(filename, vfilename) < 0) {
+			return FDB_RESULT_FILE_RENAME_FAIL;
+
+	    	}
+            } 
+/*            if ((ret = rename(filename, vfilename)) < 0) {
                 return FDB_RESULT_FILE_RENAME_FAIL;
             }
+*/
             config.compaction_mode = FDB_COMPACTION_MANUAL;
             fs = _fdb_open(handle, vfilename, FDB_VFILENAME, &config);
             if (fs != FDB_RESULT_SUCCESS) {
@@ -6332,9 +6352,21 @@ fdb_status fdb_switch_compaction_mode(fdb_file_handle *fhandle,
             if (fs != FDB_RESULT_SUCCESS) {
                 return fs;
             }
-            if ((ret = rename(vfilename, filename) < 0)) {
+	    if (handle->file->config->rawblksize){
+		if(volume_move(handle->file->config->rawdevice,filename, vfilename)<0){
+			return FDB_RESULT_FILE_RENAME_FAIL;
+		}
+	    }
+	    else if(!handle->file->config->rawblksize){
+		if (rename(filename, vfilename) < 0) {
+			return FDB_RESULT_FILE_RENAME_FAIL;
+
+	    	}
+	    }
+/*            if ((ret = rename(vfilename, filename) < 0)) {
                 return FDB_RESULT_FILE_RENAME_FAIL;
             }
+*/
             config.compaction_mode = FDB_COMPACTION_AUTO;
             config.compaction_threshold = new_threshold;
             fs = _fdb_open(handle, vfilename, FDB_VFILENAME, &config);

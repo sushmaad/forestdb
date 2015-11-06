@@ -1212,7 +1212,7 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                 int t_remove;
                 t_remove=ops->remove(file->filename);
                // remove(file->filename);
-
+		printf("filemgr_close remove %s\n",file->filename);
                 foreground_deletion = true;
             }
 
@@ -2221,6 +2221,7 @@ void filemgr_remove_pending(struct filemgr *old_file, struct filemgr *new_file)
                ops = get_filemgr_ops();
                int t_remove;
                t_remove=ops->remove(old_file->filename);
+	       printf("filemgr_remove_pending remove %s\n",old_file->filename);
 
 
         }
@@ -2307,7 +2308,9 @@ fdb_status filemgr_destroy_file(char *filename,
         fdb_assert(e, e, 0);
         filemgr_free_func(&file->e);
         if (filemgr_does_file_exist(filename) == FDB_RESULT_SUCCESS) {
-            if (remove(filename)) {
+	struct filemgr_ops *ops;
+	ops = get_filemgr_ops();
+            if (ops->remove(file->filename)) {
                 status = FDB_RESULT_FILE_REMOVE_FAIL;
             }
         }
@@ -2365,8 +2368,11 @@ fdb_status filemgr_destroy_file(char *filename,
                 if (status == FDB_RESULT_SUCCESS) {
                     if (filemgr_does_file_exist(filename)
                                                == FDB_RESULT_SUCCESS) {
-                        if (!file->rawblksize && remove(filename)) {
-                            status = FDB_RESULT_FILE_REMOVE_FAIL;
+                        if (!file->rawblksize){
+
+	                struct filemgr_ops *ops;
+        	        ops = get_filemgr_ops();
+			if(ops->remove(file->filename))status = FDB_RESULT_FILE_REMOVE_FAIL;
                         } else {
                           return (fdb_status)file->ops->remove(filename);
                         }

@@ -907,6 +907,7 @@ fdb_status compactor_get_actual_filename(const char *filename,
     printf("matafile name is %s\n",path);
     meta_ptr = _compactor_read_metafile(path, &meta, log_callback);
     if (meta_ptr == NULL) {
+//	printf("_compactor_read_metafile\n");
         if (comp_mode == FDB_COMPACTION_MANUAL && does_file_exist(filename)) {
             strcpy(actual_filename, filename);
             return FDB_RESULT_SUCCESS;

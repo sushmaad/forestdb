@@ -1392,7 +1392,7 @@ fdb_status _fdb_open(fdb_kvs_handle *handle,
     if(config->flags & FDB_OPEN_WITH_LEGACY_CRC) {
         fconfig.options |= FILEMGR_CREATE_CRC32;
     }
-
+    printf("after get actual_filename and before filemgr_open\n");
     handle->fileops = get_filemgr_ops();
     filemgr_open_result result = filemgr_open((char *)actual_filename,
                                               handle->fileops,
@@ -1400,7 +1400,7 @@ fdb_status _fdb_open(fdb_kvs_handle *handle,
     if (result.rv != FDB_RESULT_SUCCESS) {
         return (fdb_status) result.rv;
     }
-
+    printf("after filemgr_open\n"); 
     handle->file = result.file;
     if (config->compaction_mode == FDB_COMPACTION_MANUAL &&
         strcmp(filename, actual_filename)) {

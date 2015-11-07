@@ -750,6 +750,7 @@ filemgr_open_result filemgr_open(char *filename, struct filemgr_ops *ops,
         free(file->config);
         free(file);
         spin_unlock(&filemgr_openlock);
+	printf("filemgr_open return FDB_RESULT_SEEK_FAIL\n");
         result.rv = FDB_RESULT_SEEK_FAIL;
         return result;
     }
@@ -1261,13 +1262,18 @@ fdb_status filemgr_close(struct filemgr *file, bool cleanup_cache_onclose,
                         // If background file removal is not done yet, we postpone
                         // file renaming at this time.
        //                 fdb_config fconfig = fdb_get_default_config();
+       			printf("filemgr_close before rename\n");
 			if (file->config->rawblksize){
+	
+       				printf("filemgr_close rawblk rename\n");
         			if(volume_move(file->config->rawdevice, file->filename,orig_file_name)<0){
                             	_log_errno_str(file->ops, log_callback, FDB_RESULT_FILE_RENAME_FAIL,
                                            "CLOSE", file->filename);
     				}
 			}
 			else if(!file->config->rawblksize){
+	
+       				printf("filemgr_close filename rename\n");
                         	if (rename(file->filename, orig_file_name) < 0) {
                             	// Note that the renaming failure is not a critical
                             	// issue because the last compacted file will be automatically

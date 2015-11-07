@@ -675,8 +675,10 @@ int _blkmgr_linux_close(int fd)
 cs_off_t _blkmgr_linux_goto_eof(int fd)
 {
     cs_off_t rv = volume_offset(fd);
+    printf("_blkmgr_linux_goto_eof fd is %d, rv is %lu\n",fd,rv);
     if (rv < 0) {
         return (cs_off_t) FDB_RESULT_SEEK_FAIL; // LCOV_EXCL_LINE
+        printf("Return FDB_RESULT_SEEK_FAIL\n");
     }
     return rv;
 }
@@ -912,6 +914,7 @@ void _blkmgr_linux_update_compaction_no(const char *filename, char *dirname, cha
     }
     int *volume_remain;  // remaining volumes number
     int remaining=0;
+
     volume_remain=&remaining;
     int volume_max=32;
     int volume_count=0; // Found volumes number
